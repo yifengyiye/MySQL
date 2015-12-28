@@ -1,0 +1,19 @@
+select nnd,count(*)
+from
+	(select case
+			when substring(IDdate,6,5) BETWEEN "03-21" AND '04-19' then '白羊座'  
+			when substring(IDdate,6,5) BETWEEN "04-20" AND '05-20'  then '金牛座'  
+			when substring(IDdate,6,5) BETWEEN "05-21" AND '06-21'  then '双子座'  
+			when substring(IDdate,6,5) BETWEEN "06-22" AND '07-22'  then '巨蟹座'
+			when substring(IDdate,6,5) BETWEEN "07-23" AND '08-22'  then '狮子座'
+			when substring(IDdate,6,5) BETWEEN "08-23" AND '09-22' then '处女座'  
+			when substring(IDdate,6,5) BETWEEN "09-23" AND '10-23'  then '天秤座'  
+			when substring(IDdate,6,5) BETWEEN "10-24" AND '11-22'  then '天蝎座'  
+			when substring(IDdate,6,5) BETWEEN "11-23" AND '12-21'  then '射手座'
+			when substring(IDdate,6,5) BETWEEN "12-22" AND '01-19'  then '摩羯座'
+			when substring(IDdate,6,5) BETWEEN "01-20" AND '02-18' then '水瓶座'  
+			when substring(IDdate,6,5) BETWEEN "02-19" AND '03-20'  then '双鱼座'   end as nnd
+	FROM ds_account
+	WHERE IDdate is not null) a 
+group by nnd
+order by 2 DESC;
