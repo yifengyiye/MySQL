@@ -23,3 +23,36 @@ AND accountid in (SELECT id
 GROUP BY 1) b
 ON a.accountid=b.accountid
 ORDER BY 4 DESC) shichang;
+
+
+#
+SELECT count(accountid),sum(diff),sum(diff)/count(accountid)
+FROM
+	(SELECT a.accountid,a.createtime as atime,b.createtime,timestampdiff(day,b.createtime,a.createtime) as diff
+	FROM
+	(SELECT accountid,createtime
+	FROM da_account_trade
+	where biztype in (1,3) AND inouttype=1 AND `status`=20 
+	AND accountid in 
+			(SELECT id
+			FROM da_account
+			WHERE date(registtime)>'2015-5-31' 
+      AND commandid is null 
+			AND channel NOT in ('dandanzuan','kumi','dandanzuan','xiaoniao','8868','dianju'))
+	GROUP BY  1) a
+	LEFT JOIN
+	(SELECT accountid,createtime
+	FROM da_account_trade
+	WHERE biztype=4 AND inouttype=1 AND `status`=20
+	AND accountid in (SELECT accountid
+		FROM da_account_trade
+		where biztype in (1,3) AND inouttype=1 AND `status`=20 
+		AND accountid in 
+				(SELECT id
+				FROM da_account
+				WHERE date(registtime)>'2015-5-31' AND commandid is null 
+				AND channel NOT in ('dandanzuan','kumi','dandanzuan','xiaoniao','8868','dianju'))
+		GROUP BY 1)) b
+	ON a.accountid=b.accountid
+  GROUP BY 1
+	ORDER BY 4 DESC) shichang;
