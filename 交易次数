@@ -1,0 +1,13 @@
+FROM
+(SELECT CASE
+	WHEN count(accountid)=1 THEN '交易1次'
+	when count(accountid)=2 THEN '交易2次'
+	when count(accountid)=3 THEN '交易3次'
+	WHEN count(accountid)>3 THEN '交易3+次' END as times,sum(amount+assetamount+bonusamount+couponamount) as sum 
+FROM da_account_trade
+WHERE biztype in (1,3) AND inouttype=1 AND `status`=20 AND date(createtime)='2015-12-31' 
+AND accountid in (SELECT accountid FROM da_account_trade
+WHERE date(createtime)='2015-12-31'
+and `status` =20 and biztype in (1,3) and inouttype = 1)
+GROUP BY accountid) aaa
+GROUP BY 1;
