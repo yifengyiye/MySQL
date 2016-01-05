@@ -1,0 +1,24 @@
+【活跃时间段分布】
+SELECT hour,count(hour)
+FROM
+(SELECT accountid,hour(createtime) as hour
+FROM da_account_trade
+where biztype in (1,3) AND inouttype=1 AND `status`=20 
+AND accountid in (SELECT id  FROM ds_account  WHERE date(registtime)>'2015-05-31' 
+  AND commandid is null	AND iDdate is not null 
+	AND channel NOT in ('quanmama','kumi','dandanzuan','xiaoniao','8868','dianju'))
+GROUP BY 1
+HAVING count(accountid)>1 ) aaa
+GROUP BY 1
+ORDER BY 2 DESC;
+#注册用户的注册时间活跃时间段分布
+SELECT hour,count(id)
+FROM
+(SELECT id,hour(registtime) as hour
+FROM da_account
+WHERE commandid is null 
+AND date(registtime)>'2015-5-31' AND channel NOT in ('quanmama','kumi','dandanzuan','xiaoniao','8868','dianju')) aaa
+GROUP BY 1
+ORDER BY 2 DESC;
+
+
