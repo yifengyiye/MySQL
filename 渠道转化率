@@ -1,0 +1,48 @@
+SELECT aaa.channel,aaa.count,bbb.count,ccc.count
+from
+(
+#各渠道注册用户
+SELECT channel,count(id) as count 
+FROM da_account
+WHERE  date_format(registtime,'%Y-%m')='2015-12' 
+AND channel in ('360','xiaomi','yingyongb','baiducpd','lianxiang','baidu','tengxun','huawei',
+'guanwang','jinritoutiao','meizu','pp','taobao','oppo','wandoujia','jinritoutiao2','wandoujiacpd',
+'UCCPD','360yuansheng','jinritoutiao3','sougou','jinritoutiao1','PPcpd')
+GROUP BY 1
+ORDER BY 2 DESC  ) aaa
+JOIN
+(
+#各渠道绑卡用户
+SELECT channel,count(DISTINCT(id)) as count
+FROM ds_account
+WHERE IDdate is not null 
+AND date_format(registtime,'%Y-%m')='2015-12' 
+AND channel in ('360','xiaomi','yingyongb','baiducpd','lianxiang','baidu','tengxun','huawei',
+'guanwang','jinritoutiao','meizu','pp','taobao','oppo','wandoujia','jinritoutiao2','wandoujiacpd',
+'UCCPD','360yuansheng','jinritoutiao3','sougou','jinritoutiao1','PPcpd')
+GROUP BY 1
+ORDER BY 2 DESC ) bbb
+ON aaa.channel=bbb.channel
+JOIN
+(
+#各渠道交易用户
+SELECT b.channel as channel,count(DISTINCT(accountid)) as count
+FROM 
+(SELECT accountid FROM da_account_trade WHERE biztype in (1,3) AND inouttype=1 AND `status`=20
+AND accountid in (SELECT id FROM ds_account
+WHERE IDdate is not null AND date_format(registtime,'%Y-%m')='2015-12' 
+AND channel in ('360','xiaomi','yingyongb','baiducpd','lianxiang','baidu','tengxun','huawei',
+'guanwang','jinritoutiao','meizu','pp','taobao','oppo','wandoujia','jinritoutiao2','wandoujiacpd',
+'UCCPD','360yuansheng','jinritoutiao3','sougou','jinritoutiao1','PPcpd'))) a
+JOIN
+(SELECT id,channel
+FROM da_account
+WHERE  date_format(registtime,'%Y-%m')='2015-12' 
+AND channel in ('360','xiaomi','yingyongb','baiducpd','lianxiang','baidu','tengxun','huawei',
+'guanwang','jinritoutiao','meizu','pp','taobao','oppo','wandoujia','jinritoutiao2','wandoujiacpd',
+'UCCPD','360yuansheng','jinritoutiao3','sougou','jinritoutiao1','PPcpd')) b
+on a.accountid=b.id
+GROUP BY 1
+ORDER BY 2 DESC ) ccc
+ON bbb.channel=ccc.channel
+GROUP BY 1;
