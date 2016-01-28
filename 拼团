@@ -240,3 +240,59 @@ ON a.id=b.groupid) bbbb
 ON aaaa.accountid=bbbb.aaa
 GROUP BY 1;
 
+
+
+
+
+
+
+
+
+
+
+【【【【渠道分析】】】】
+#渠道注册人数
+SELECT channel,count(id) as count
+FROM youyu_account
+WHERE DATE_FORMAT(registtime,'%Y-%m-%d') BETWEEN '2015-11-20' AND '2015-11-27'
+GROUP BY channel
+ORDER BY count DESC;
+#渠道绑卡人数
+SELECT channel,count(channel)
+FROM youyu_account_trade
+WHERE  DATE_FORMAT(paysuccesstime,'%Y-%m-%d') BETWEEN '2015-11-20' AND '2015-11-27' AND `status` = 20  AND inouttype = 1 and biztype=4 
+and accountid  in (SELECT id FROM youyu_account WHERE DATE_FORMAT(registtime,'%Y-%m-%d') BETWEEN '2015-11-20' AND '2015-11-27' )
+GROUP BY channel;
+#渠道交易人数
+SELECT channel,count(DISTINCT(accountid))
+FROM youyu_account_trade
+WHERE  DATE_FORMAT(paysuccesstime,'%Y-%m-%d') BETWEEN '2015-11-20' AND '2015-11-27' AND `status` = 20 AND biztype in (1,3) AND inouttype=1
+AND channel IN (SELECT channel FROM youyu_account WHERE DATE_FORMAT(registtime,'%Y-%m-%d') BETWEEN '2015-11-20' AND '2015-11-27')
+AND accountid  in (SELECT id FROM youyu_account WHERE DATE_FORMAT(registtime,'%Y-%m-%d') BETWEEN '2015-11-20' AND '2015-11-27')
+GROUP BY channel;
+【汇总】
+SELECT a.channel,a.count(id),b.count(channel)
+FROM
+(SELECT channel,count(id) as count
+FROM youyu_account
+WHERE DATE_FORMAT(registtime,'%Y-%m-%d') BETWEEN '2015-11-20' AND '2015-11-27'
+GROUP BY channel)a
+LEFT JOIN
+(SELECT channel,count(channel),count(DISTINCT(accountid))
+FROM youyu_account_trade
+WHERE  DATE_FORMAT(paysuccesstime,'%Y-%m-%d') BETWEEN '2015-11-20' AND '2015-11-27' AND `status` = 20 AND biztype in (1,3) AND inouttype=1
+AND channel IN (SELECT channel FROM youyu_account WHERE DATE_FORMAT(registtime,'%Y-%m-%d') BETWEEN '2015-11-20' AND '2015-11-27')
+AND accountid  in (SELECT id FROM youyu_account WHERE DATE_FORMAT(registtime,'%Y-%m-%d') BETWEEN '2015-11-20' AND '2015-11-27')
+GROUP BY channel)b
+ON a.channel = b.channel
+GROUP BY channel;
+
+
+#各种渠道交易额汇总：
+SELECT channel,sum(amount+couponamount+assetamount+bonusamount) as sum
+FROM youyu_account_trade
+WHERE DATE_FORMAT(paysuccesstime,'%Y-%m-%d') BETWEEN '2015-11-20' AND '2015-11-26' AND `status` = 20 AND biztype in (1,3) AND inouttype=1
+AND channel IN (SELECT DISTINCT(channel) FROM youyu_account WHERE DATE_FORMAT(registtime,'%Y-%m-%d') BETWEEN '2015-11-20' AND '2015-11-27')
+AND accountid  in (SELECT DISTINCT(id) FROM youyu_account WHERE DATE_FORMAT(registtime,'%Y-%m-%d') BETWEEN '2015-11-20' AND '2015-11-27')
+GROUP BY channel
+ORDER BY sum DESC;
