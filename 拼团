@@ -1,0 +1,242 @@
+【分析思路】
+1、正在申请的团队：有多少正在申请————每个团队现有的团员数量————每个团队团长的id————当前的屏图案行为正处在哪个阶段————其中在之前有过拼团行为的团长
+  ————之前有过拼团行为的团长申请失败的原因在哪里
+2、拼团过期的团队：有多少团队拼团过期————拼团过期的原因是什么？？？————这些团长中之前有过交易行为的数量有多少————没有交易行为的数量有多少————每个团队的团员数量
+  ————每个团队拼团所处的阶段————邀请来的团长有多少人————渠道自己注册来的团长有多少人
+3、拼团成功的团队：多少团队拼团成功————每个团队的交易金额——每个团队每个用户的交易情况——每个团队的收益情况
+  
+
+
+
+【拼团成功】
+拼团成功的团长信息+团队信息
+SELECT accountid,createtime,count(accountid)
+FROM activity_group
+-- WHERE `status`=3
+GROUP BY 1
+HAVING count(accountid) > 1
+ORDER BY 2 DESC ;
+
+成团各团成交额
+SELECT groupid,sum(amount)
+FROM activity_group_detail
+WHERE groupid in (SELECT id FROM activity_group WHERE `status`=3)
+GROUP BY 1;
+
+SELECT groupid,count(accountid),sum(amount)
+FROM activity_group_detail
+WHERE groupid in (SELECT id FROM activity_group WHERE `status`=4)
+GROUP BY 1
+ORDER BY 3 DESC;
+
+短信推送之后申请拼团的数量：
+SELECT accountid,createtime
+FROM activity_group
+WHERE `status`=4 AND createtime>'2016-01-10 12:58:51' AND createtime<'2016-01-11 23:59:59'
+-- WHERE `status`=4 AND DATE_FORMAT(createtime,'%Y-%m-%d %T') between '2016-01-07 16:53:14' and '2016-01-08 23:59:59';
+WHERE `status`=4 AND EXTRACT(year_second FROM "%Y-%m-%d %H-%i-%s") between "2016-01-07 16:53:14" and "2016-01-08 23:59:59";
+
+回头用户查询
+SELECT accountid FROM activity_group
+WHERE  createtime<'2016-01-07 16:53:14'
+AND accountid in (SELECT accountid FROM activity_group
+WHERE `status`=4 AND createtime>'2016-01-07 16:53:14' AND createtime<'2016-01-08 23:59:59')
+
+
+
+
+SELECT EXTRACT(YEAR_MONTH FROM "1999-07-02 01:02:03"); 
+SELECT DATE_FORMAT(NOW(),'%Y-%m-%d %H-%i-%s');
+SELECT DATE_FORMAT(NOW(),'%Y-%m-%d %T');
+
+各过期团队成员情况:
+SELECT groupid,count(accountid)
+FROM activity_group_detail
+WHERE groupid in (SELECT id FROM activity_group WHERE `status`=4)
+GROUP BY 1
+ORDER BY 2 DESC;
+
+正在拼团的团队的成员数:
+SELECT groupid,count(accountid)
+FROM activity_group_detail
+WHERE groupid in (SELECT id FROM activity_group WHERE `status`=1 GROUP BY 1)
+GROUP BY 1
+ORDER BY 2 DESC;
+正在拼团的团队的成员数+每个团团长的id
+SELECT a.id,count(b.accountid),a.accountid,a.createtime
+FROM
+(SELECT id,accountid,createtime
+FROM activity_group
+WHERE `status`=1
+GROUP BY 1) a
+JOIN 
+(SELECT groupid,accountid
+FROM activity_group_detail) b
+ON a.id=b.groupid
+GROUP BY 1;
+
+（正在拼团的团长在之前有没有申请过建团：）
+SELECT accountid,count(accountid)
+FROM activity_group
+WHERE date(createtime) BETWEEN '2015-12-31' AND '2015-01-06'
+-- 		AND accountid in (SELECT a.accountid
+-- 		FROM
+-- 		(SELECT id,accountid,createtime
+-- 		FROM activity_group
+-- 		WHERE `status`=1
+-- 		GROUP BY 1) a
+-- 		JOIN 
+-- 		(SELECT groupid,accountid
+-- 		FROM activity_group_detail) b
+-- 		ON a.id=b.groupid
+-- 		GROUP BY 1)
+GROUP BY 1
+ORDER BY 2 DESC;
+
+
+拼团成功团队的团队交易明细
+SELECT accountid,sum(amount)
+FROM activity_group_detail
+WHERE accountid in (SELECT accountid FROM activity_group WHERE `status`=4) AND `status`=1
+GROUP BY 1
+ORDER BY 2 DESC;
+
+各拼团成功团队的交易情况
+SELECT groupid,sum(amount)
+FROM activity_group_detail
+WHERE groupid in (SELECT groupid FROM activity_group_detail
+WHERE accountid in (SELECT accountid FROM activity_group WHERE `status`=4) AND `status`=1)
+group BY 1
+
+
+
+【拼团失败---已经过期】
+SELECT date(createtime),count(DISTINCT(accountid))
+SELECT accountid
+FROM activity_group
+WHERE `status`=4
+GROUP BY 1;
+
+
+SELECT groupid,count(accountid)
+FROM activity_group_detail
+WHERE `status`=1
+-- AND groupid in (SELECT id FROM a WHERE `status`=4) 
+GROUP BY 1
+ORDER BY 2 DESC;
+
+
+
+
+SELECT groupid,createtime,count(accountid)
+FROM activity_group_detail
+-- WHERE `status`=1 
+GROUP BY 1
+ORDER BY 3 DESC
+
+SELECT DISTINCT(accountid)
+FROM activity_group
+WHERE `status`!=3
+
+
+SELECT accountid,status,count(accountid)
+FROM activity_group
+WHERE `status`!=3
+GROUP BY 1
+ORDER BY 3 DESC;
+
+拼团已经过期的团长中———有交易行为的团长
+SELECT DISTINCT(accountid)
+FROM da_account_trade
+WHERE biztype in (1,3) AND inouttype=1 AND `status`=20
+AND accountid in (SELECT accountid FROM activity_group WHERE `status`=4 GROUP BY 1)
+
+过期团长中——邀请yu渠道用户数量
+SELECT count(DISTINCT(id))
+FROM da_account
+WHERE commandid is not null 
+AND id in (SELECT accountid FROM activity_group WHERE `status`=4 GROUP BY 1);
+
+有交易行为的过期团长中——邀请yu渠道用户数量
+
+
+SELECT count(DISTINCT(id))
+FROM da_account
+WHERE commandid IS NOT NULL
+AND id IN (
+	SELECT DISTINCT(accountid)
+	FROM da_account_trade
+	WHERE biztype IN (1, 3)
+	AND inouttype = 1
+	AND `status` = 20
+	AND accountid IN (
+		SELECT accountid
+		FROM activity_group
+		WHERE `status` = 4
+		GROUP BY 1
+	)
+);
+
+
+过期团长中有交易行为的308个团长交易额最大的十个：
+
+SELECT accountid,mobile
+FROM da_ds_account_variable_0111
+WHERE accountid in (SELECT accountid FROM (
+SELECT accountid,sum(amount+assetamount+bonusamount+couponamount)
+FROM da_account_trade
+WHERE biztype in (1,3) AND inouttype=1 AND `status`=20
+AND accountid in (SELECT accountid FROM activity_group WHERE `status`=4 GROUP BY 1)
+GROUP BY 1 ORDER BY 2 DESC LIMIT 15) aaa)
+
+拼团过期的392个团长中，在拼团活动中有交易行为的12个团长：
+SELECT accountid,mobile
+FROM da_ds_account_variable_0111
+WHERE accountid in 
+(SELECT accountid FROM 
+(SELECT accountid,sum(amount)
+FROM activity_group_detail
+WHERE accountid in (SELECT accountid FROM activity_group WHERE `status`=4) AND `status`=1
+GROUP BY 1
+ORDER BY 2 DESC)aaa);
+
+
+拼团过期的392个团长中没有交易行为的84个团长中的10个用户：
+SELECT accountid,mobile
+FROM da_ds_account_variable_0111
+WHERE accountid in 
+(SELECT accountid
+FROM activity_group
+WHERE `status`=4 AND accountid not in (SELECT accountid
+FROM da_account_trade
+WHERE biztype in (1,3) AND inouttype=1 AND `status`=20
+AND accountid in (SELECT accountid FROM activity_group WHERE `status`=4 GROUP BY 1)
+GROUP BY 1 ))
+
+
+每个过期团长的团队的用户数
+SELECT accountid,mobile,count
+FROM
+(SELECT accountid,mobile
+FROM da_ds_account_variable_0111
+WHERE accountid in 
+(SELECT accountid
+FROM activity_group
+WHERE `status`=4 AND accountid not in (SELECT accountid
+FROM da_account_trade
+WHERE biztype in (1,3) AND inouttype=1 AND `status`=20
+AND accountid in (SELECT accountid FROM activity_group WHERE `status`=4 GROUP BY 1)
+GROUP BY 1 ))) aaaa
+LEFT JOIN
+(SELECT a.accountid as aaa,b.count
+from
+(SELECT accountid,id FROM activity_group WHERE `status`=4) a
+JOIN
+(SELECT groupid,count(accountid) as count
+FROM activity_group_detail
+WHERE groupid in (SELECT id FROM activity_group WHERE `status`=4)
+GROUP BY 1) b
+ON a.id=b.groupid) bbbb
+ON aaaa.accountid=bbbb.aaa
+GROUP BY 1;
+
