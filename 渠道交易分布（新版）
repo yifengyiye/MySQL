@@ -1,0 +1,139 @@
+SELECT xxx.channel,aaa.count,bbb.coscot,ccc.count,ccc.sum,eee.sum,fff.sum,ggg.count,hhh.count,iii.sum
+FROM
+(SELECT channel from da_account GROUP BY 1) xxx
+LEFT JOIN
+			(#1、时间--注册渠道的注册人数
+			SELECT channel,count(id) as count FROM da_account WHERE date(registtime)='2016-02-15' GROUP BY 1) aaa
+ON xxx.channel=aaa.channel
+LEFT JOIN
+			(#2、时间--注册渠道的绑卡人数
+		SELECT xy,sum(coss+cott) as coscot
+		FROM
+			(SELECT aaa.channel,ifnull(cos,0) as coss,bbb.channel as xy,ifnull(cot,0) as cott
+			FROM
+					(#【1】交易表绑卡人数
+					SELECT channel,ifnull(count(accountid),0) as cos
+					FROM
+						(SELECT accountid,createtime FROM da_account_trade WHERE biztype=4 AND inouttype=1 AND `status`=20 
+						and date(createtime)='2016-02-15'
+						GROUP BY 1) a
+					JOIN
+						(SELECT id,channel from da_account WHERE date(registtime)='2016-02-15' ) b
+					ON a.accountid=b.id
+					GROUP BY 1 ) aaa
+			LEFT JOIN
+					(#【2】鉴权表绑卡人数
+					SELECT channel,count(accountid) as cot
+					FROM 
+						(SELECT accountid,createtime 
+						FROM account_independent_authentication 
+						WHERE date(createtime)='2016-02-15' AND `status`=20
+						GROUP BY 1) a
+					JOIN
+						(SELECT id,channel from da_account WHERE date(registtime)='2016-02-15') b
+					ON a.accountid=b.id
+					GROUP BY 1) bbb
+			ON aaa.channel=bbb.channel
+			UNION
+			SELECT aaa.channel,ifnull(cos,0) as coss,bbb.channel as xy,ifnull(cot,0) as cott
+			FROM
+					(#【1】交易表绑卡人数
+					SELECT channel,count(accountid) as cos
+					FROM
+						(SELECT accountid,createtime FROM da_account_trade WHERE biztype=4 AND inouttype=1 AND `status`=20 
+						and date(createtime)='2016-02-15'
+						GROUP BY 1) a
+					JOIN
+						(SELECT id,channel from da_account WHERE date(registtime)='2016-02-15') b
+					ON a.accountid=b.id
+					GROUP BY 1 ) aaa
+			RIGHT JOIN
+					(#【2】鉴权表绑卡人数
+					SELECT channel,count(accountid) as cot
+					FROM 
+						(SELECT accountid,createtime 
+						FROM account_independent_authentication 
+						WHERE date(createtime)='2016-02-15' AND `status`=20
+						GROUP BY 1) a
+					JOIN
+						(SELECT id,channel from da_account WHERE date(registtime)='2016-02-15') b
+					ON a.accountid=b.id
+					GROUP BY 1) bbb
+			ON aaa.channel=bbb.channel  ) aaaa
+		GROUP BY 1 ) bbb
+ON xxx.channel=bbb.xy
+LEFT JOIN
+			(#3、时间--渠道的首次交易人数
+			SELECT b.channel as channel,count(accountid) as count,sum(amount+assetamount+couponamount+couponamount) as sum
+			FROM
+					(SELECT accountid,amount,assetamount,bonusamount,couponamount
+					FROM da_account_trade
+					WHERE biztype in (1,3) AND inouttype=1 and `status`=20 AND date(createtime)='2016-02-15'
+					AND accountid not in (SELECT accountid
+							FROM da_account_trade
+							WHERE biztype  in (1,3) AND inouttype=1 and `status`=20 AND date(createtime)<'2016-02-15')
+					GROUP BY 1) a
+			LEFT JOIN
+					(SELECT id,channel FROM da_account WHERE date(registtime)='2016-02-15') b
+			ON b.id = a.accountid
+			GROUP BY 1) ccc
+ON xxx.channel=ccc.channel
+LEFT JOIN 
+			(#4、新用户交易额
+			SELECT channel,sum(sum) as sum
+			FROM
+					(SELECT accountid,sum(amount+assetamount+couponamount+bonusamount) as sum  FROM da_account_trade
+					WHERE biztype in (1,3) AND inouttype=1 AND `status`=20 AND date(createtime)='2016-02-15'
+					AND accountid not in (SELECT accountid FROM da_account_trade 
+					WHERE biztype in (1,3) AND inouttype=1 AND `status`=20  AND date(createtime)<'2016-02-15') GROUP BY 1) a
+			LEFT JOIN 
+					(SELECT id,channel FROM da_account) b
+			ON a.accountid = b.id
+			GROUP BY 1) eee
+ON xxx.channel=eee.channel
+LEFT JOIN 
+			(#6、新老用户交易额
+			SELECT channel,sum(sum) as sum
+			FROM
+					(SELECT accountid,sum(amount+assetamount+bonusamount+couponamount) as sum
+					FROM da_account_trade
+					WHERE biztype in (1,3) AND inouttype=1 AND `status`=20 AND date(createtime)='2016-02-15') a
+			LEFT JOIN 
+					(SELECT id,channel FROM da_account) b
+			ON a.accountid = b.id
+			GROUP BY 1) fff
+ON xxx.channel=fff.channel
+LEFT JOIN
+			(-- 【渠道累计】
+			#7、渠道累计注册人数
+			SELECT channel,count(id) as count
+			FROM da_account
+			WHERE	date(registtime) < '2016-02-16'
+			GROUP BY 1) ggg
+ON xxx.channel=ggg.channel
+LEFT JOIN 
+			(#8、渠道累计交易人数
+			SELECT b.channel as channel,count(*) as count
+			FROM
+			(SELECT accountid,amount,assetamount,bonusamount,couponamount FROM da_account_trade 
+			WHERE biztype in (1,3) AND inouttype=1 AND `status`=20 AND date(createtime)<'2016-02-16' 
+			GROUP BY 1 ) a
+			LEFT JOIN 
+			(SELECT id,channel FROM da_account) b
+			ON a.accountid = b.id
+			GROUP BY 1) hhh
+ON xxx.channel=hhh.channel
+LEFT JOIN
+			(#9、渠道累计交易金额
+			SELECT b.channel as channel,sum(a.amount+a.assetamount+a.bonusamount+a.couponamount) as sum
+			FROM
+			(SELECT *
+			FROM da_account_trade
+			WHERE biztype in (1,3) AND inouttype=1 AND `status`=20 AND date(createtime)<'2016-02-16') a
+			LEFT JOIN 
+			(SELECT id,channel FROM da_account) b
+			ON a.accountid = b.id
+			GROUP BY 1) iii
+ON xxx.channel=iii.channel
+WHERE xxx.channel is not null
+GROUP BY 1;
