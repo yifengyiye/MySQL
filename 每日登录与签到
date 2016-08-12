@@ -1,0 +1,16 @@
+#每日登录&签到用户数
+SELECT dda,countdenglu,countqiandao
+FROM
+		(
+		SELECT date(opentime) as dda,count(DISTINCT accountid) as countdenglu
+		FROM system_appopenlog
+		GROUP BY 1
+		) a
+JOIN
+		(
+		SELECT date(createtime) as ddaa,count(*) as countqiandao
+		FROM score_gain_stream
+		WHERE `status`=1 AND date(createtime)>'2016-08-01'
+		GROUP BY 1
+		) b
+ON a.dda=b.ddaa ;
