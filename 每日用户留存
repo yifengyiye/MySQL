@@ -1,0 +1,187 @@
+-- 每日注册用户留存分布：
+SELECT dda,
+		count(id) as count,
+		count(b.accountid) as count0,
+		count(c.accountid) as count1,
+		count(d.accountid) as count7,
+		count(e.accountid) as count15,
+		count(f.accountid) as count30,
+		count(g.accountid) as count60,
+		count(h.accountid) as count90
+FROM
+		(SELECT id,date(registtime) as dda FROM account	WHERE date(registtime)>'2016-5-02' GROUP BY 1,2 ) a
+LEFT JOIN
+		(SELECT accountid,date(opentime) as ddaa FROM system_appopenlog WHERE date(opentime)>'2015-12-31' GROUP BY 1,2 
+		UNION
+		SELECT accountid,date(opentime) as ddaa FROM system_appopenlog_bak WHERE date(opentime)>'2015-12-31' GROUP BY 1,2 ) b
+ON a.id=b.accountid AND a.dda=date(date_sub(b.ddaa,interval 0 day))
+LEFT JOIN
+		(SELECT accountid,date(opentime) as ddaa FROM system_appopenlog WHERE date(opentime)>'2015-12-31' GROUP BY 1,2 
+		UNION
+		SELECT accountid,date(opentime) as ddaa FROM system_appopenlog_bak WHERE date(opentime)>'2015-12-31' GROUP BY 1,2 ) c
+ON a.id=c.accountid AND a.dda=date(date_sub(c.ddaa,interval 1 day))
+LEFT JOIN
+		(SELECT accountid,date(opentime) as ddaa FROM system_appopenlog WHERE date(opentime)>'2015-12-31' GROUP BY 1,2 
+		UNION
+		SELECT accountid,date(opentime) as ddaa FROM system_appopenlog_bak WHERE date(opentime)>'2015-12-31' GROUP BY 1,2 ) d
+ON a.id=d.accountid AND a.dda=date(date_sub(d.ddaa,interval 7 day))
+LEFT JOIN
+		(SELECT accountid,date(opentime) as ddaa FROM system_appopenlog WHERE date(opentime)>'2015-12-31' GROUP BY 1,2 
+		UNION
+		SELECT accountid,date(opentime) as ddaa FROM system_appopenlog_bak WHERE date(opentime)>'2015-12-31' GROUP BY 1,2 ) e
+ON a.id=e.accountid AND a.dda=date(date_sub(e.ddaa,interval 15 day))
+LEFT JOIN
+		(SELECT accountid,date(opentime) as ddaa FROM system_appopenlog WHERE date(opentime)>'2015-12-31' GROUP BY 1,2 
+		UNION
+		SELECT accountid,date(opentime) as ddaa FROM system_appopenlog_bak WHERE date(opentime)>'2015-12-31' GROUP BY 1,2 ) f
+ON a.id=f.accountid AND a.dda=date(date_sub(f.ddaa,interval 30 day))
+LEFT JOIN
+		(SELECT accountid,date(opentime) as ddaa FROM system_appopenlog WHERE date(opentime)>'2015-12-31' GROUP BY 1,2 
+		UNION
+		SELECT accountid,date(opentime) as ddaa FROM system_appopenlog_bak WHERE date(opentime)>'2015-12-31' GROUP BY 1,2 ) g
+ON a.id=g.accountid AND a.dda=date(date_sub(g.ddaa,interval 60 day))
+LEFT JOIN
+		(SELECT accountid,date(opentime) as ddaa FROM system_appopenlog WHERE date(opentime)>'2015-12-31' GROUP BY 1,2 
+		UNION
+		SELECT accountid,date(opentime) as ddaa FROM system_appopenlog_bak WHERE date(opentime)>'2015-12-31' GROUP BY 1,2 ) h
+ON a.id=h.accountid AND a.dda=date(date_sub(h.ddaa,interval 90 day))
+GROUP BY 1 ;
+
+
+-- 每日交易用户留存统计：
+SELECT dda,
+		count(a.accountid) as count,
+		count(b.accountid) as count0,   #当日留存
+		count(c.accountid) as count1,   #次日留存
+		count(d.accountid) as count7,   #7日留存
+		count(e.accountid) as count15,  #15日留存
+		count(f.accountid) as count30,  #30 日留存
+		count(g.accountid) as count60,  #60日留存
+		count(h.accountid) as count90   #90日留存
+FROM
+		(SELECT accountid,date(createtime) as dda
+		FROM account_trade
+		WHERE biztype in (1,3) and inouttype=1 AND `status`=20 AND date(createtime)>'2016-05-02'
+		GROUP BY 1,2  ) a
+LEFT JOIN
+		(SELECT accountid,date(opentime) as ddaa FROM system_appopenlog WHERE date(opentime)>'2015-12-31'GROUP BY 1,2 
+		UNION
+		SELECT accountid,date(opentime) as ddaa FROM system_appopenlog_bak WHERE date(opentime)>'2015-12-31' GROUP BY 1,2 ) b
+ON a.accountid=b.accountid AND a.dda=date(date_sub(b.ddaa,interval 0 day)) #单日访问用户
+LEFT JOIN
+		(SELECT accountid,date(opentime) as ddaa FROM system_appopenlog WHERE date(opentime)>'2015-12-31'GROUP BY 1,2 
+		UNION
+		SELECT accountid,date(opentime) as ddaa FROM system_appopenlog_bak WHERE date(opentime)>'2015-12-31' GROUP BY 1,2 ) c
+ON a.accountid=c.accountid AND a.dda=date(date_sub(c.ddaa,interval 1 day)) #次日访问用户统计
+LEFT JOIN
+		(SELECT accountid,date(opentime) as ddaa FROM system_appopenlog WHERE date(opentime)>'2015-12-31'GROUP BY 1,2 
+		UNION
+		SELECT accountid,date(opentime) as ddaa FROM system_appopenlog_bak WHERE date(opentime)>'2015-12-31' GROUP BY 1,2 ) d
+ON a.accountid=d.accountid AND a.dda=date(date_sub(d.ddaa,interval 7 day)) #7日访问用户统计
+LEFT JOIN
+		(SELECT accountid,date(opentime) as ddaa FROM system_appopenlog WHERE date(opentime)>'2015-12-31'GROUP BY 1,2 
+		UNION
+		SELECT accountid,date(opentime) as ddaa FROM system_appopenlog_bak WHERE date(opentime)>'2015-12-31' GROUP BY 1,2 ) e
+ON a.accountid=e.accountid AND a.dda=date(date_sub(e.ddaa,interval 15 day)) #15日访问用户统计
+LEFT JOIN
+		(SELECT accountid,date(opentime) as ddaa FROM system_appopenlog WHERE date(opentime)>'2015-12-31'GROUP BY 1,2 
+		UNION
+		SELECT accountid,date(opentime) as ddaa FROM system_appopenlog_bak WHERE date(opentime)>'2015-12-31' GROUP BY 1,2 ) f
+ON a.accountid=f.accountid AND a.dda=date(date_sub(f.ddaa,interval 30 day)) #30日访问用户统计
+LEFT JOIN
+		(SELECT accountid,date(opentime) as ddaa FROM system_appopenlog WHERE date(opentime)>'2015-12-31'GROUP BY 1,2 
+		UNION
+		SELECT accountid,date(opentime) as ddaa FROM system_appopenlog_bak WHERE date(opentime)>'2015-12-31' GROUP BY 1,2 ) g
+ON a.accountid=g.accountid AND a.dda=date(date_sub(g.ddaa,interval 60 day)) #60日访问头用户统计
+LEFT JOIN
+		(SELECT accountid,date(opentime) as ddaa FROM system_appopenlog WHERE date(opentime)>'2015-12-31'GROUP BY 1,2 
+		UNION
+		SELECT accountid,date(opentime) as ddaa FROM system_appopenlog_bak WHERE date(opentime)>'2015-12-31' GROUP BY 1,2 ) h
+ON a.accountid=h.accountid AND a.dda=date(date_sub(h.ddaa,interval 90 day)) #90日访问用户统计
+GROUP BY 1 ;
+
+
+
+
+
+
+-- 
+-- 
+-- 
+-- 
+-- 
+-- 
+-- 【test】
+-- 每日注册：
+-- 次日留存：
+-- 7日留存：
+-- 15日留村：
+-- 30日留存：
+-- 
+-- select DATE(date_add(NOW(),interval 7 day)) from dual;
+-- 
+-- 1、每日注册:
+-- SELECT date(registtime),count(id)
+-- FROM account
+-- WHERE date(registtime)>'2015-12-31'
+-- GROUP BY 1;
+-- 
+-- 2、次日留存：
+-- -- SELECT date(dda),count(DISTINCT accountid)
+-- -- FROM system_appopenlog
+-- -- WHERE date(date_add(NOW(),interval 7 day)) as dda='2016-05-12'
+-- -- GROUP BY 1;
+-- 3、7日留存：
+-- 4、15日留村：
+-- 5、30日留存：
+-- 
+-- SELECT dda,count(*)
+-- FROM
+-- 		(SELECT id,date(registtime) as dda FROM account	WHERE date(registtime)>'2015-12-31' GROUP BY 1,2 ) a
+-- JOIN
+-- 		(SELECT accountid,date(opentime) as ddaa FROM system_appopenlog WHERE date(opentime)>'2015-12-31' GROUP BY 1,2  ) b
+-- ON a.id=b.accountid AND a.dda=date(date_sub(ddaa,interval 15 day))
+-- GROUP BY 1;
+-- 
+-- 
+-- 每日交易用户数：
+-- SELECT date(createtime),count(DISTINCT accountid)
+-- FROM account_trade
+-- WHERE biztype in (1,3) and inouttype=1 AND `status`=20 AND date(createtime)>'2015-12-31'
+-- GROUP BY 1 ;
+-- 
+-- 次日交易留存：
+-- -- 7日交易：
+-- -- 15日交易：
+-- -- 30日交易：
+-- SELECT dda,count(*)
+-- FROM
+-- 		(SELECT accountid,date(createtime) as dda
+-- 		FROM account_trade
+-- 		WHERE biztype in (1,3) and inouttype=1 AND `status`=20 AND date(createtime)>'2015-12-31'
+-- 		GROUP BY 1,2  ) a
+-- JOIN
+-- 		(SELECT accountid,date(opentime) as ddaa FROM system_appopenlog WHERE date(opentime)>'2015-12-31'GROUP BY 1,2 
+-- 		UNION
+-- 		SELECT accountid,date(opentime) as ddaa FROM system_appopenlog_bak WHERE date(opentime)>'2015-12-31'GROUP BY 1,2 ) b
+-- ON a.accountid=b.accountid AND a.dda=b.ddaa
+-- GROUP BY 1;
+-- 
+-- SELECT max(opentime),min(opentime)
+-- FROM system_appopenlog_bak
+-- 
+-- 
+-- 
+-- 
+-- SELECT dda,count(*)
+-- FROM
+-- 		(SELECT accountid,date(createtime) as dda
+-- 		FROM account_trade
+-- 		WHERE biztype in (1,3) and inouttype=1 AND `status`=20 AND date(createtime)>'2015-12-31'
+-- 		GROUP BY 1,2  ) a
+-- JOIN
+-- 		(SELECT accountid,date(opentime) as ddaa FROM system_appopenlog WHERE date(opentime)>'2015-12-31'GROUP BY 1,2 
+-- 		UNION
+-- 		SELECT accountid,date(opentime) as ddaa FROM system_appopenlog_bak WHERE date(opentime)>'2015-12-31' GROUP BY 1,2 ) b
+-- ON a.accountid=b.accountid AND a.dda=date(date_sub(ddaa,interval 30 day))
+-- GROUP BY 1;
