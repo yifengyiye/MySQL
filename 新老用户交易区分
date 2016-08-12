@@ -1,0 +1,50 @@
+#【新用户】--单日新用户交易人数，交易笔数，交易金额，平均交易金额
+SELECT date(createtime),
+       count(DISTINCT(accountid))as 用户数,
+       count(accountid)as 交易次数,
+       sum(amount+assetamount+bonusamount+couponamount)as 交易额,
+       sum(amount+assetamount+bonusamount+couponamount)/count(DISTINCT(accountid)) as 客均指
+FROM da_account_trade
+WHERE biztype in (1,3) AND inouttype = 1 AND `status` = 20 AND date(createtime)='2016-01-05'
+AND accountid NOT IN (SELECT accountid FROM da_account_trade WHERE biztype in (1,3) AND inouttype = 1 AND `status` = 20 
+and date(createtime) < '2016-01-05');
+
+
+#【老用户】--单日老用户交易人数，交易笔数，交易金额，平均交易金额
+SELECT date(createtime),
+       count(DISTINCT(accountid))as 用户数,
+       count(accountid)as 交易次数,
+       sum(amount+assetamount+bonusamount+couponamount)as 交易额,
+       sum(amount+assetamount+bonusamount+couponamount)/count(DISTINCT(accountid)) as 客均指
+FROM da_account_trade
+WHERE biztype in (1,3) AND inouttype = 1 AND `status` = 20 AND date(createtime)='2016-01-05' AND accountid IN 
+      (SELECT accountid FROM da_account_trade WHERE biztype in (1,3) AND inouttype = 1 AND `status` = 20 
+       and date(createtime) < '2016-01-05');
+
+
+#【首次交易不同产品人数、笔数——新用户】
+SELECT left(b.itemtitle,3),a.renshu as 人数,a.bishu as 笔数
+FROM
+(SELECT itemid,accountid,count(DISTINCT(accountid))as renshu,count(accountid)as bishu
+FROM da_account_trade
+WHERE biztype in (1,3) AND inouttype = 1 and `status`=20 AND date(createtime)='2016-01-05' AND accountid not in 
+      (SELECT accountid FROM da_account_trade WHERE biztype in (1,3) AND inouttype = 1 AND `status` = 20 
+      and date(createtime) < '2016-01-05')
+GROUP BY 1) a
+LEFT JOIN 
+(SELECT * FROM selfitem) b
+on a.itemid = b.id
+GROUP BY 1;
+
+
+#【首次交易不同产品人数——老用户】
+SELECT left(b.itemtitle,3),a.renshu,a.bishu
+FROM
+(SELECT itemid,accountid,count(DISTINCT(accountid))as renshu,count(accountid)as bishu FROM da_account_trade
+WHERE biztype in (1,3) AND inouttype = 1  and `status`=20 AND date(createtime)='2016-01-05' AND accountid in (SELECT accountid FROM da_account_trade WHERE biztype in (1,3) AND inouttype = 1 AND `status` = 20 
+      and date(createtime) < '2016-01-05')
+GROUP BY 1) a
+LEFT JOIN 
+(SELECT * FROM selfitem) b
+on a.itemid = b.id
+GROUP BY 1;
