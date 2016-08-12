@@ -1,0 +1,55 @@
+SELECT
+	accountid,
+	createtime,
+	sum,
+	itemtitle,
+	totalperiods
+FROM
+	(
+		SELECT
+			accountid,
+			itemid,
+			createtime,
+			sum(
+				amount + assetamount + bonusamount + couponamount
+			) AS sum
+		FROM
+			account_trade
+		WHERE
+			biztype IN (1, 3)
+		AND inouttype = 1
+		AND `status` = 20
+		AND date(createtime) BETWEEN '2016-08-08'
+		AND '2016-08-10'
+		AND accountid NOT IN (
+			SELECT
+				accountid
+			FROM
+				account_trade
+			WHERE
+				biztype IN (1, 3)
+			AND inouttype = 1
+			AND `status` = 20
+			AND date(createtime) < '2016-08-08'
+			GROUP BY
+				1
+		)
+		AND accountid IN (
+			SELECT
+				id
+			FROM
+				account
+			WHERE
+				channel = 'liuliangbao'
+		)
+		GROUP BY
+			id
+	) a
+JOIN (
+	SELECT
+		id,
+		itemtitle,
+		totalperiods
+	FROM
+		selfitem
+) b ON a.itemid = b.id;
