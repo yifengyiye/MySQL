@@ -1,0 +1,28 @@
+#【注册用户】
+SELECT a.dda,count1,count2,count1/(count1+count2),count2/(count1+count2),count3,count4,count3/(count3+count4),count4/(count4+count3)
+from
+		(#1、【每日渠道注册用户数】
+		SELECT date(registtime) dda,count(id) count1 FROM account WHERE date(registtime)>'2016-01-25' AND commandid is null GROUP BY 1) a
+JOIN
+		(#2、【每日邀请注册用户总数】
+		SELECT date(registtime) dda,count(id)as count2 FROM account WHERE date(registtime)>'2016-01-25' AND commandid is not null GROUP BY 1) b
+ON a.dda=b.dda
+JOIN
+		(#【交易用户】3、当日新增用户之中来自渠道途径的用户数：
+		SELECT date(createtime) as dda,count(DISTINCT(accountid)) as count3
+		FROM account_trade
+		WHERE biztype in (1,3) AND inouttype=1 AND `status`=20 AND date(createtime)='2016-08-11'
+			AND accountid not in (SELECT accountid FROM account_trade WHERE biztype in (1,3) AND inouttype=1 AND `status`=20 AND date(createtime)<'2016-08-11')
+			AND accountid in (SELECT id FROM account WHERE commandid is null)) c
+ON a.dda=c.dda
+JOIN
+		(#4、当日新增用户之中来自邀请途径的用户数：
+		SELECT date(createtime) as dda,count(DISTINCT accountid) as count4
+		FROM account_trade
+		WHERE biztype in (1,3) AND inouttype=1 AND `status`=20 AND date(createtime)='2016-08-11'
+			AND accountid not in (SELECT accountid FROM account_trade WHERE biztype in (1,3) AND inouttype=1 AND `status`=20 AND date(createtime)<'2016-08-11')
+			AND accountid in (SELECT id FROM account WHERE commandid is not null)) d
+ON a.dda=d.dda;
+
+
+SELECT * FROM da_account limit 10;
