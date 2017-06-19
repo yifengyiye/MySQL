@@ -3431,3 +3431,298 @@ AND accountid in
 GROUP BY id 
 ) aaaa
 GROUP BY 1;
+
+
+【一、曝光用户-注册用户-帮卡用户-交易用户】
+#注册用户总量
+SELECT count(*)  from da_account;
+#只交易
+SELECT count(DISTINCT accountid)
+FROM da_account_trade
+WHERE biztype in (1,3) AND inouttype=1 AND `status`=20;
+【年龄分组】
+#2、所有帮卡，交易用户年龄分布：
+select nnd,count(*)
+from
+(select case
+		when DATE_FORMAT(iDdate,'%Y') BETWEEN "2000" AND '2015' then '00后'  
+		when DATE_FORMAT(iDdate,'%Y') BETWEEN "1990" AND '1999'  then '90后'  
+		when DATE_FORMAT(iDdate,'%Y') BETWEEN "1980" AND '1989'  then '80后'  
+		when DATE_FORMAT(iDdate,'%Y') BETWEEN "1970" AND '1979'  then '70后'
+		when DATE_FORMAT(iDdate,'%Y') BETWEEN "1960" AND '1969'  then '60后'
+		when DATE_FORMAT(iDdate,'%Y') <'1960'  then '60前' end as nnd
+ from da_ds_account
+WHERE IDdate is not null) a 
+group by nnd
+order by 1 DESC;
+
+SELECT count(id) FROM da_ds_account WHERE IDdate is not null;
+#2-1所有绑卡用户的年龄分布
+select nnd,count(id)
+from
+		(select case
+		when DATE_FORMAT(iDdate,'%Y') BETWEEN "2000" AND '2015' then '00后'  
+		when DATE_FORMAT(iDdate,'%Y') BETWEEN "1990" AND '1999'  then '90后'  
+		when DATE_FORMAT(iDdate,'%Y') BETWEEN "1980" AND '1989'  then '80后'  
+		when DATE_FORMAT(iDdate,'%Y') BETWEEN "1970" AND '1979'  then '70后'
+		when DATE_FORMAT(iDdate,'%Y') BETWEEN "1960" AND '1969'  then '60后'
+		when DATE_FORMAT(iDdate,'%Y') <'1960'  then '60前' end as nnd,id
+from ds_account
+WHERE IDdate is not null ) a 
+group by 1
+order by 1 DESC;
+#2-2所有交易用户的年龄分布
+select nnd,count(*)
+from
+(select case
+		when DATE_FORMAT(iDdate,'%Y') BETWEEN "2000" AND '2015' then '00后'  
+		when DATE_FORMAT(iDdate,'%Y') BETWEEN "1990" AND '1999'  then '90后'  
+		when DATE_FORMAT(iDdate,'%Y') BETWEEN "1980" AND '1989'  then '80后'  
+		when DATE_FORMAT(iDdate,'%Y') BETWEEN "1970" AND '1979'  then '70后'
+		when DATE_FORMAT(iDdate,'%Y') BETWEEN "1960" AND '1969'  then '60后'
+		when DATE_FORMAT(iDdate,'%Y') <'1960'  then '60前' end as nnd,id
+ from ds_account
+WHERE IDdate is not null AND id in 
+	(SELECT accountid
+	FROM da_account_trade 
+	WHERE biztype=4 AND inouttype=1 AND `status`=20
+	GROUP BY 1)) a 
+group by 1
+order by 1 DESC;
+
+
+SELECT accountid,sum(amount+assetamount+bonusamount+couponamount)
+FROM da_account_trade 
+WHERE biztype in(1,3) AND inouttype=1 AND `status`=20 GROUP BY 1;
+
+#总绑卡交易用户出生月份
+SELECT MONTH(iDdate),count(id)
+FROM ds_account
+WHERE IDdate is not null 
+GROUP BY 1
+ORDER BY 2 DESC;
+
+#总绑卡交易用户出生年份分布
+SELECT DATE_FORMAT(iDdate,'%Y'),count(id)
+FROM ds_account
+WHERE IDdate is not null
+GROUP BY 1;
+
+#总绑卡交易用户星座分布
+SELECT substring(IDdate,6,5),count(id)
+FROM ds_account
+WHERE IDdate is not null
+GROUP BY 1;
+
+select nnd,count(id)
+from
+	(select case
+			when substring(IDdate,6,5) BETWEEN "03-21" AND '04-19'  then '白羊座'  
+			when substring(IDdate,6,5) BETWEEN "04-20" AND '05-20'  then '金牛座'  
+			when substring(IDdate,6,5) BETWEEN "05-21" AND '06-21'  then '双子座'  
+			when substring(IDdate,6,5) BETWEEN "06-22" AND '07-22'  then '巨蟹座'
+			when substring(IDdate,6,5) BETWEEN "07-23" AND '08-22'  then '狮子座'
+			when substring(IDdate,6,5) BETWEEN "08-23" AND '09-22'  then '处女座'  
+			when substring(IDdate,6,5) BETWEEN "09-23" AND '10-23'  then '天秤座'  
+			when substring(IDdate,6,5) BETWEEN "10-24" AND '11-22'  then '天蝎座'  
+			when substring(IDdate,6,5) BETWEEN "11-23" AND '12-21'  then '射手座'
+			when substring(IDdate,6,5) BETWEEN "12-22" AND '01-19'  then '摩羯座'
+			when substring(IDdate,6,5) BETWEEN "01-20" AND '02-18'  then '水瓶座'  
+			when substring(IDdate,6,5) BETWEEN "02-19" AND '03-20'  then '双鱼座'   end as nnd,id
+	FROM ds_account
+	WHERE IDdate is not null) a 
+group by nnd
+order by 2 DESC;
+
+【用户省份分布】
+#（1）所有用户的省份分布：
+SELECT left(mobilelocation,2)AS 省份,count(accountid)
+FROM da_ds_account_variable
+where mobilelocation is not null
+GROUP BY 1
+ORDER BY 2 DESC;
+#（2）所有绑卡用户的省份分布：
+SELECT left(mobilelocation,2)AS 省份,count(accountid)
+FROM da_ds_account_variable
+where mobilelocation is not null AND accountid in 
+	(SELECT accountid
+	FROM da_account_trade
+	WHERE biztype=4 AND inouttype=1 AND `status`=20
+	GROUP BY 1)
+GROUP BY 1
+ORDER BY 2 DESC;
+
+#（3）所有交易用户的省份分布：
+SELECT substring(mobilelocation,1,2)as 省份,count(accountid)as 数量
+FROM da_ds_account_variable
+where mobilelocation is not null AND accountid in 
+(SELECT accountid FROM da_account_trade WHERE biztype in (1,3) AND inouttype=1 AND `status`=20 GROUP BY 1)
+GROUP BY 1
+ORDER BY 2 DESC;
+
+【渠道分布】
+#1、所有注册用户的注册渠道分布：
+SELECT channel,count(DISTINCT(id))
+FROM da_ds_account
+GROUP BY 1
+#1-1、各渠道总注册人数和总交易人数，总交易总额
+SELECT channel,count(id),count(accountid),count(accountid)/count(id),sum(sum)
+FROM
+	(SELECT id,channel FROM da_account ) a
+LEFT JOIN
+	(SELECT accountid,sum(amount+assetamount+bonusamount+couponamount) as sum
+	FROM da_account_trade
+	WHERE biztype in (1,3) AND inouttype=1 AND `status`=20
+	GROUP BY 1) b
+ON a.id=b.accountid
+GROUP BY 1
+ORDER BY 2 DESC ;
+
+
+#3、所有交易用户的注册渠道
+SELECT channel,count(accountid)
+FROM
+(SELECT id,channel FROM da_account) a
+JOIN
+(SELECT accountid
+FROM da_account_trade
+WHERE biztype in(1,3) AND inouttype=1 AND `status`=20
+GROUP BY 1) b
+on a.id=b.accountid
+GROUP BY 1
+ORDER BY 2 DESC
+
+#4、所有交易用户的交易渠道统计：
+SELECT channel,count(accountid),count(DISTINCT(accountid)),sum(amount+assetamount+bonusamount+couponamount)
+FROM da_account_trade
+WHERE biztype in (1,3) AND inouttype=1 AND `status`=20
+GROUP BY 1
+ORDER BY 2 DESC;
+
+#7、交易渠道人均交易额
+SELECT channel,sum(amount+assetamount+bonusamount+couponamount)/count(DISTINCT(accountid))
+FROM da_account_trade
+WHERE biztype in (1,3) and inouttype=1 AND `status`=20
+GROUP BY 1
+ORDER BY 2;
+
+
+【奖励】
+【红包】
+#发放红包
+SELECT DATE_FORMAT(createtime,'%Y-%m'),count(id),sum(bonus)
+FROM account_bonus
+WHERE inouttype = 1
+GROUP BY 1;
+
+#红包使用
+SELECT DATE_FORMAT(createtime,'%Y-%m'),sum(bonusamount)
+FROM da_account_trade
+WHERE biztype in (1,3) AND `status`=20 AND inouttype=1
+GROUP BY 1;
+
+#现金券
+#发放现金券
+SELECT DATE_FORMAT(createtime,'%Y-%m'),sum(money)
+FROM account_coupons
+GROUP BY 1;
+#现金券的使用
+SELECT DATE_FORMAT(createtime,'%Y-%m'),sum(couponamount) 
+FROM da_account_trade
+WHERE inouttype = 1 AND `status` = 20 AND biztype in (1,3)
+GROUP BY 1;
+#现金券的过期
+SELECT DATE_FORMAT(createtime,'%Y-%m'),sum(money) 
+FROM account_coupons_expire
+GROUP BY 1;
+【活动】
+
+
+
+
+【产品分析】
+#交易表关联产品表，遍历利率annualrate
+SELECT annualrate,count(DISTINCT itemid)as count,sum(amount+bonusamount+couponamount+assetamount) as sum
+FROM 
+	(SELECT accountid,itemid,amount,assetamount,bonusamount,couponamount 
+	FROM da_account_trade 
+	WHERE biztype in (1,3) AND inouttype = 1 AND `status`=20) a
+JOIN
+	(SELECT id,annualrate FROM selfitem) b
+ON a.itemid = b.id
+GROUP BY 1;
+
+###交易表关联产品表，遍历期限totalperiods：
+SELECT left(itemtitle,3),count(DISTINCT itemid),sum(amount+bonusamount+couponamount+assetamount) as sum
+FROM 
+(SELECT accountid,itemid,amount,assetamount,bonusamount,couponamount  
+FROM da_account_trade 
+WHERE biztype in (1,3) AND inouttype = 1 AND `status`=20) a
+LEFT JOIN
+(SELECT id,itemtitle FROM selfitem) b
+ON a.itemid = b.id
+GROUP BY 1;
+
+
+
+【当天每个时段交易人数】
+SELECT TIME_FORMAT(createtime,'%Y-%m-%d %H'),count(DISTINCT(accountid))
+FROM da_account_trade
+WHERE biztype in (1,3) AND inouttype=1 AND `status`=20 
+GROUP BY 1;
+【收益计算】
+#总计收益
+SELECT DATE_FORMAT(incomedate,'%Y-%m'),sum(amount),sum(income)
+FROM account_ddb_income
+GROUP BY 1;
+#点点宝投资+收益分布
+SELECT DATE_FORMAT(incomedate,'%Y-%m'),sum(amount),sum(income)
+FROM account_ddb_income
+GROUP BY 1;
+#定期理财投资+收益分布
+-- SELECT a.id,a.accountid,a.createtime,sum(amount+assetamount+bonusamount+couponamount)as 交易额,b.annualrate as 利率,b.totalperiods as 周期,
+-- sum(amount+assetamount+bonusamount+couponamount)*b.annualrate*b.totalperiods*0.01/365 as x
+SELECT x.m,x.xx,y.yy
+FROM
+(SELECT DATE_FORMAT(createtime,'%Y-%m') m,sum(amount+assetamount+bonusamount+couponamount)*b.annualrate*b.totalperiods*0.01/365 as xx
+FROM
+(SELECT id,accountid,createtime,itemid,amount,assetamount,bonusamount,couponamount
+FROM da_account_trade
+WHERE biztype =1 AND inouttype=1 AND `status`=20 ) a
+LEFT JOIN
+(SELECT id,annualrate,totalperiods FROM selfitem) b
+ON a.itemid =b.id
+GROUP BY 1)  x
+LEFT JOIN
+(SELECT DATE_FORMAT(createtime,'%Y-%m') as n,sum(amount+assetamount+bonusamount+couponamount) as yy
+FROM da_account_trade
+WHERE biztype=1 AND inouttype=1 AND `status`=20
+GROUP BY 1)  y
+on x.m=y.n;
+
+
+#理财金额分布
+select nnd,count(nnd)
+from
+	(select case
+			when sum(amount+assetamount+bonusamount+couponamount) >10000 then 'A+' 
+			when sum(amount+assetamount+bonusamount+couponamount) >5000  then 'A' 
+			when sum(amount+assetamount+bonusamount+couponamount) >2000  then 'B'  
+			when sum(amount+assetamount+bonusamount+couponamount) >1000  then 'C'  
+			when sum(amount+assetamount+bonusamount+couponamount) >500   then 'D'
+			when sum(amount+assetamount+bonusamount+couponamount) >50    then 'E' end as nnd
+	from da_account_trade
+  WHERE biztype in (1,3) AND inouttype=1 AND `status`=20
+	GROUP BY accountid) a 
+group by 1
+order by 1 DESC;
+
+
+SELECT accountid,sum(amount+assetamount+bonusamount+couponamount) as sum
+FROM da_account_trade
+WHERE biztype in (1,3) and inouttype =1 AND `status`=20
+GROUP BY 1
+HAVING sum>10000 
+ORDER BY 1 DESC;
+
+
