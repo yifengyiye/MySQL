@@ -1,0 +1,549 @@
+-- 2016-12-29 : 用户获取收益：
+SELECT accountid,sum(income)
+FROM 
+(SELECT accountid,income FROM account_ddb_income 
+UNION
+SELECT accountid,totalincome as income FROM account_selfitem  ) b
+GROUP BY 1 
+HAVING sum(income) > 59.99 ;
+
+
+
+-- 2016-12-09 :王昱琛用户风险等级：
+SELECT CASE 
+		when riskscore between 0 AND 20 then "0-20"
+		when riskscore between 21 AND 40 then "21-40"
+		when riskscore between 41 AND 60 then "41-60"
+		when riskscore between 61 AND 80 then "61-80"
+		when riskscore between 81 AND 100 then "81-100" END as rank,count(DISTINCT accountid)
+-- SELECT accountid,riskscore
+FROM account_business
+WHERE riskscore is not null 
+GROUP BY 1 
+ORDER BY 2 DESC ;
+
+
+
+-- 2016-12-02 :倪妍，最近90天人均交易笔数
+SELECT count(*),count(DISTINCT accountid),count(*)/count(DISTINCT accountid)
+FROM account_trade
+WHERE biztype in (1,3) and inouttype= 1 AND `status`=20 AND date(createtime) BETWEEN '2016-09-02' AND '2016-12-01';
+
+-- 2016-08-09:王昱琛：红包存量及其分布：
+SELECT sum)
+-- SELECT accountid,sum(bonus)
+FROM account
+GROUP BY 1
+
+SELECT CASE
+		WHEN sum BETWEEN 0 AND 50.00 then "0-50"
+		WHEN sum BETWEEN 50.01 AND 100 then "51-100"
+		WHEN sum BETWEEN 100.01 AND 500 then "101-500"
+		WHEN sum BETWEEN 500.01 AND 1000 then "501-1000"
+		WHEN sum > 1000 then "1000+" END as rank,count(DISTINCT id) 人数,sum(sum) 点币数量,round(sum(sum)/count(id),1) 人均金额
+FROM
+		(SELECT id,sum(bonusasset) as sum FROM account GROUP BY 1 HAVING sum > 0 ) ssss
+GROUP BY 1
+ORDER BY 2 DESC;
+
+SELECT count(DISTINCT id),sum(sum)
+FROM
+(
+SELECT id,sum(bonusasset) as sum 
+FROM account
+WHERE id in (SELECT accountid FROM account_trade WHERE biztype in (1,3) AND inouttype=1 AND `status`=20 GROUP BY 1 )
+GROUP BY 1 
+HAVING sum(bonusasset)>0 
+) aaaa;
+
+-- 2016-08-05 :
+SELECT *
+FROM score_gain_stream
+limit 10
+
+SELECT score_reason,score_type
+FROM score_gain_stream
+GROUP BY 1
+ORDER BY 2 
+
+SELECT sum(amount),sum(score)
+FROM score_gain_stream
+-- WHERE score_type=1
+-- WHERE score_reason like '%申购%' OR score_reason LIKE '%购买%'
+WHERE item_id in (SELECT id FROM selfitem )
+
+-- 2016-07-29 ：剩余点币分布：
+SELECT CASE
+				WHEN cur_usable_score BETWEEN 0 AND 0 THEN "0个"
+				WHEN cur_usable_score BETWEEN 1 AND 100 THEN "1-100个"
+				WHEN cur_usable_score BETWEEN 101 AND 500 THEN "101-500个"
+				WHEN cur_usable_score BETWEEN 501 AND 1000 THEN "501-1k个"
+				WHEN cur_usable_score BETWEEN 1001 AND 5000 THEN "1001-5k个"
+				WHEN cur_usable_score BETWEEN 5001 AND 10000 THEN "5001-1w个"
+				WHEN cur_usable_score BETWEEN 10001 AND 100000 THEN "10001-10w个"
+				WHEN cur_usable_score > 100000 THEN "10w+个" END as rank,count(accountid),sum(cur_usable_score),sum(cur_usable_score)/count(accountid)
+FROM
+(SELECT accountid,cur_usable_score
+-- SELECT sum(cur_usable_score)
+FROM account_score
+GROUP BY 1
+HAVING cur_usable_score>0
+) a
+GROUP BY 1 
+ORDER BY 2 DESC;
+
+SELECT sum(score)
+FROM score_cost_stream
+LIMIT 10
+
+SELECT sum(cur_usable_score) as 存量,
+			 sum(total_gain_score) 获取,
+			 sum(total_cost_score) 使用,
+			 sum(total_expire_score) 过期,
+			 sum(total_freeze_score) 冻结
+FROM account_score 
+
+-- 2016-07-21 ：帮我拉下1000以下，这3个月来的每天平均提现金额
+SELECT DATE_FORMAT(createtime,'%Y-%m'),count(accountid),count(DISTINCT accountid),sum(sum),sum(sum)/count(DISTINCT date(createtime))
+-- SELECT date(createtime),count(accountid),count(DISTINCT accountid),sum(sum)
+FROM
+		(SELECT accountid,createtime,sum(amount+assetamount+bonusamount+couponamount) as sum
+		FROM account_trade
+		WHERE biztype=4 AND inouttype=2 AND `status` in (6,20) 
+-- AND date(createtime) between '2016-04-20' AND '2016-07-20'
+		GROUP BY id
+		HAVING sum<1000 ) a
+GROUP BY 1;
+
+
+
+
+-- 2016-07-07 :强哥，想要用户每月平均提现次数和金额的数据~~~
+-- 提现：
+SELECT DATE_FORMAT(createtime,'%Y-%m'),count(*),count(DISTINCT accountid),sum(amount+assetamount+bonusamount+couponamount)
+FROM account_trade
+WHERE biztype=4 AND inouttype=2 AND `status` in (6,20)
+GROUP BY 1;
+
+-- 凯强，又要麻烦你~  提现金额在2000的  3000的平均每月人数
+SELECT DATE_FORMAT(createtime,'%Y-%m'),count(accountid),count(DISTINCT accountid),sum(sum)
+FROM
+		(SELECT accountid,createtime,sum(amount+assetamount+bonusamount+couponamount) as sum
+		FROM account_trade
+		WHERE biztype=4 AND inouttype=2 AND `status` in (6,20)
+		GROUP BY id
+		HAVING sum<2000 ) a
+GROUP BY 1;
+
+
+-- 交易：
+SELECT DATE_FORMAT(createtime,'%Y-%m'),count(*),count(DISTINCT accountid),sum(amount+assetamount+bonusamount+couponamount)
+FROM account_trade
+WHERE biztype in (1,3) AND inouttype=1 AND `status`=20
+GROUP BY 1;
+
+
+
+-- 2017-01-09 ：账户余额资金大于0元，小于100元的用户：
+SELECT rank,count(DISTINCT accountid),sum(sum)/count(DISTINCT accountid)
+FROM
+(
+SELECT CASE
+		WHEN sum(asset) BETWEEN 0.01  AND 10    THEN '一级'
+		WHEN sum(asset) BETWEEN 10.01 AND 30    THEN '二级'
+		WHEN sum(asset) BETWEEN 30.01 AND 50    THEN '三级'
+		WHEN sum(asset) BETWEEN 50.01 AND 80    THEN '四级'
+		WHEN sum(asset) BETWEEN 80.01 AND 99.99 THEN '五级' end as rank,accountid,sum(asset) as sum
+-- SELECT accountid,sum(asset)
+FROM ds_save_accountbal_20160706
+WHERE saveday='2016-07-05'
+GROUP BY accountid
+HAVING sum(asset)>0 AND sum(asset)<100
+) aa
+GROUP BY 1;
+
+-- 一个月以内有交易表行为：
+-- 一个月以内有访问app行为：
+SELECT rank,count(DISTINCT accountid),sum(sum)/count(DISTINCT accountid)
+FROM
+(
+SELECT CASE
+		WHEN sum(asset) BETWEEN 0.01  AND 10    THEN '一级'
+		WHEN sum(asset) BETWEEN 10.01 AND 30    THEN '二级'
+		WHEN sum(asset) BETWEEN 30.01 AND 50    THEN '三级'
+		WHEN sum(asset) BETWEEN 50.01 AND 80    THEN '四级'
+		WHEN sum(asset) BETWEEN 80.01 AND 99.99 THEN '五级' end as rank,accountid,sum(asset) as sum
+-- SELECT accountid,sum(asset)
+FROM ds_save_accountbal_20160706
+WHERE saveday='2016-07-05' 
+-- AND accountid in (SELECT accountid FROM system_appopenlog where date(opentime) BETWEEN '2016-06-05' AND '2016-07-05' GROUP BY 1 )  #app打开过的用户
+-- AND accountid in (SELECT accountid FROM account_trade where biztype in (1,3) AND inouttype=1 AND `status`=20                       
+-- 		AND date(createtime) BETWEEN '2016-06-05' AND '2016-07-05' GROUP BY 1 HAVING sum(assetamount)>0 )                               #交易过的用户
+-- AND accountid in (SELECT accountid FROM account_trade where biztype=4 AND inouttype=2 AND `status` in (6,20) 
+-- 		AND date(createtime) BETWEEN '2016-06-05' AND '2016-07-05' GROUP BY 1 )                                                         #提现过的用户
+AND accountid in (SELECT accountid FROM account_trade GROUP BY 1)                                                                     #交易表行为的用户
+GROUP BY accountid
+HAVING sum(asset)>0 AND sum(asset)<100
+) aa
+GROUP BY 1;
+
+
+
+#账户余额大约0元，并且没有过交易记录的用户：
+SELECT accountid,TIMESTAMPDIFF(day,date(now()),date(max(savetime))),sum(asset)
+FROM ds_save_accountbal_20160706
+WHERE accountid not in (SELECT accountid FROM account_trade GROUP BY 1)
+GROUP BY 1
+HAVING sum(asset)>0 ;
+
+
+SELECT count(*)
+FROM ds_save_accountbal_20160706
+WHERE date(saveday)='2016-07-03'
+
+
+-- 2016-05-10 ：倪妍：3.0版本用户留存
+-- 安卓注册用户：
+SELECT id,channel FROM da_account WHERE channel in ('App Store','AppStore') AND date(registtime)>'2016-04-28'
+-- 每日注册用户数：
+SELECT date(registtime),count(id) 
+FROM da_account 
+WHERE channel not in ('App Store','AppStore') AND date(registtime)>'2016-04-27'
+GROUP BY 1;
+
+-- android用户次日留存：
+SELECT *
+FROM
+(SELECT id FROM da_account WHERE channel not in ('App Store','AppStore') AND date(registtime)='2016-05-05'  ) a
+JOIN
+(SELECT accountid FROM system_appopenlog WHERE date(opentime)='2016-05-11' GROUP BY 1  ) b
+ON a.id=b.accountid;
+
+-- IOS用户次日留存：
+SELECT *
+FROM
+(SELECT id FROM da_account WHERE channel in ('AppStore','App Store') AND date(registtime)='2016-04-29'  ) a
+JOIN
+(SELECT accountid FROM system_appopenlog WHERE date(opentime)='2016-05-05' GROUP BY 1  ) b
+ON a.id=b.accountid;
+
+
+
+
+SELECT channel,count(*)
+FROM da_account
+WHERE channel LIKE '%App%'
+GROUP BY 1 
+ORDER BY 2 DESC
+
+
+-- 2016-05-03 ：
+-- 激活——注册：
+-- 注册——绑卡：
+-- 绑卡——交易：
+
+
+
+-- 2016-04-25 ：产品数据需求：凯强 麻烦你  关于现在在进行的邀请一名好友注册并交易就送20元的这个活动，我想要以下数据：邀请人的人数 、被邀请的人数 、 被邀请人首次投资的额度、  近3个 月。最近三个月邀请人的人数、被邀请的人数
+SELECT count(DISTINCT commandid),count(commandid)
+-- SELECT *
+FROM da_account
+WHERE date(registtime)>'2016-01-25' AND commandid is not null
+
+-- 以上被邀请用户在这段时间的首次交易额
+SELECT count(DISTINCT accountid),
+		sum(amount+assetamount+bonusamount+couponamount),
+		sum(amount+assetamount+bonusamount+couponamount)/count(DISTINCT accountid)		
+-- SELECT accountid,sum(amount+assetamount+bonusamount+couponamount)
+FROM
+		(SELECT accountid,itemid,amount,assetamount,bonusamount,couponamount
+		FROM da_account_trade
+		WHERE biztype in (1,3) AND inouttype =1 AND `status`=20
+		AND accountid in  (SELECT id FROM da_account WHERE date(registtime)>'2016-01-25' AND commandid is not null )
+		GROUP BY 1 	) aaa
+GROUP BY 1
+ORDER BY 2 DESC
+
+==================================================================================================================================================================
+==================================================================================================================================================================
+-- 【第一部分：】
+-- 1、累计交易额
+-- 2、累计交易笔数
+SELECT sum(amount+assetamount+bonusamount+couponamount),count(accountid)
+FROM account_trade
+WHERE biztype in (1,3) AND inouttype=1 AND `status`=20 AND date(createtime)<'2017-01-09';
+
+-- 3、累计注册用户数
+SELECT count(id) FROM account WHERE date(registtime)<'2017-01-09';
+
+-- 4、累计投资人赚取收益
+-- SELECT a.dda,sum(x+y)
+-- FROM 
+-- (SELECT DATE_FORMAT(incomedate,'%Y') as dda,sum(income) as x FROM account_ddb_income WHERE date(incomedate)<'2017-01-09') a
+-- JOIN
+-- (SELECT DATE_FORMAT(incomedate,'%Y') as dda,sum(income) as y FROM account_selfitem_income WHERE date(incomedate)<'2017-01-09' ) b
+-- ON a.dda=b.dda;
+
+SELECT a.dda,sum(x+y)
+FROM 
+(SELECT DATE_FORMAT(incomedate,'%Y') as dda,sum(income) as x FROM account_ddb_income WHERE date(incomedate)<'2017-01-09') a
+JOIN
+(SELECT DATE_FORMAT(createtime,'%Y') as dda,sum(totalincome) as y FROM account_selfitem WHERE date(createtime)<'2017-01-09' ) b
+ON a.dda=b.dda;
+
+-- SELECT DATE_FORMAT(createtime,'%Y') as dda,sum(totalincome) as y FROM account_selfitem WHERE date(createtime)<'2017-01-09' 
+-- SELECT sum(itemincome) FROM account;
+-- 
+-- 5、兑付率
+-- 100%
+
+-- 【第二部分：】
+-- 1、下周兑付项目
+-- 2、兑付金额	
+SELECT count(id),sum(unitprice*totalpcs)
+FROM selfitem
+WHERE date(nextretdate) BETWEEN '2017-01-09' AND '2017-01-15'
+
+-- 【第三部分：】投资用户年龄层分布（百分比）
+select nnd,count(accountid),sum(sum),sum(sum)/count(accountid)
+from
+(select case
+				when DATE_FORMAT(iDdate,'%Y') BETWEEN "2000" AND '2015' then '00后'  
+				when DATE_FORMAT(iDdate,'%Y') BETWEEN "1990" AND '1999'  then '90后'  
+				when DATE_FORMAT(iDdate,'%Y') BETWEEN "1980" AND '1989'  then '80后'  
+				when DATE_FORMAT(iDdate,'%Y') BETWEEN "1970" AND '1979'  then '70后'
+				when DATE_FORMAT(iDdate,'%Y') BETWEEN "1960" AND '1969'  then '60后'
+				when DATE_FORMAT(iDdate,'%Y') <'1960'  then '60前' end as nnd,accountid,sum
+FROM
+				(SELECT id,IDdate FROM ds_account) a
+JOIN
+				(SELECT accountid,sum(amount+assetamount+bonusamount+couponamount) as sum 
+				FROM account_trade
+				WHERE biztype in (1,3) AND inouttype=1 AND `status`=20 AND date(createtime)<'2017-01-09'
+				GROUP BY 1) b
+ON a.id=b.accountid )aaa
+GROUP BY 1 
+ORDER BY 3 DESC; 
+
+-- 【第四部分：】产品期限（周期）占比分布（百分比）
+SELECT * FROM selfitem LIMIT 10;
+SELECT left(itemtitle,3),count(id) FROM selfitem GROUP BY 1;
+
+SELECT rank,count(id)
+FROM
+(-- SELECT totalperiods,count(id),sum(unitprice*totalpcs)
+SELECT CASE 
+		WHEN totalperiods BETWEEN 1 AND 15 then '15天'
+		WHEN totalperiods BETWEEN 16 AND 45 then '30天'
+		WHEN totalperiods BETWEEN 46 AND 75 then '60天'
+		WHEN totalperiods BETWEEN 76 AND 135 then '90天'
+		WHEN totalperiods BETWEEN 136 AND 200 then '180天'
+		WHEN totalperiods BETWEEN 200 AND 400 then '360天' end as rank,id,totalperiods
+FROM selfitem ) aa
+GROUP BY 1
+ORDER BY 2 DESC;
+
+-- 【第五部分】产品（利率）占比分布（百分比）
+SELECT CASE
+		WHEN annualrate < 7.6                THEN  '7.5%以下'
+		WHEN annualrate BETWEEN 7.6 AND 8.5  THEN  '7.5%-8.5%'
+		WHEN annualrate BETWEEN 8.6 AND 10.0 THEN  '8.6%-10.0%'
+		WHEN annualrate > 10.0                THEN  '10%以上' END as rank,count(id),sum(unitprice*totalpcs)
+-- SELECT annualrate,count(id),sum(unitprice*totalpcs)
+FROM selfitem 
+GROUP BY 1
+ORDER BY 3 DESC;
+
+-- 【第六部分】
+SELECT CASE
+		WHEN sum BETWEEN 0 AND 5000 then '0k-5k'
+		WHEN sum BETWEEN 5001 AND 10000 then '5k-1w'
+		WHEN sum BETWEEN 10001 AND 50000 then '1w-5w'
+		WHEN sum BETWEEN 50001 AND 100000 then '5w-10w'
+		WHEN sum BETWEEN 100001 AND 500000 then '10w-50w'
+		WHEN sum > 500000 then '50w+' end as rank,count(accountid),sum(sum)
+FROM
+		(SELECT accountid,sum(amount+assetamount+bonusamount+couponamount) as sum
+		FROM account_trade
+		WHERE biztype in (1,3) AND inouttype=1 AND `status`=20 AND date(createtime)<'2017-01-09'
+		GROUP BY 1 ) aa
+GROUP BY 1
+ORDER BY 3 DESC;
+
+-- 2016-05-10 ：倪妍：3.0版本用户留存
+-- 安卓注册用户：
+SELECT id,channel FROM da_account WHERE channel in ('App Store','AppStore') AND date(registtime)>'2016-04-28'
+-- 每日注册用户数：
+SELECT date(registtime),count(id) 
+FROM da_account 
+WHERE channel not in ('App Store','AppStore') AND date(registtime)>'2016-04-27'
+GROUP BY 1;
+
+-- android用户次日留存：
+SELECT *
+FROM
+(SELECT id FROM da_account WHERE channel not in ('App Store','AppStore') AND date(registtime)='2016-05-05'  ) a
+JOIN
+(SELECT accountid FROM system_appopenlog WHERE date(opentime)='2016-05-11' GROUP BY 1  ) b
+ON a.id=b.accountid;
+
+-- IOS用户次日留存：
+SELECT *
+FROM
+(SELECT id FROM da_account WHERE channel in ('AppStore','App Store') AND date(registtime)='2016-04-29'  ) a
+JOIN
+(SELECT accountid FROM system_appopenlog WHERE date(opentime)='2016-05-05' GROUP BY 1  ) b
+ON a.id=b.accountid;
+
+
+
+
+SELECT channel,count(*)
+FROM da_account
+WHERE channel LIKE '%App%'
+GROUP BY 1 
+ORDER BY 2 DESC
+
+
+-- 2016-05-03 ：
+-- 激活——注册：
+-- 注册——绑卡：
+-- 绑卡——交易：
+
+
+
+
+
+-- 2016-04-25 ：产品数据需求：
+-- 凯强 麻烦你  关于现在在进行的邀请一名好友注册并交易就送20元的这个活动，我想要以下数据：邀请人的人数 、被邀请的人数 、 被邀请人首次投资的额度、  近3个 月。
+-- 最近三个月邀请人的人数、被邀请的人数
+SELECT count(DISTINCT commandid),count(commandid)
+-- SELECT *
+FROM da_account
+WHERE date(registtime)>'2016-01-25' AND commandid is not null
+
+-- 以上被邀请用户在这段时间的首次交易额
+SELECT count(DISTINCT accountid),
+		sum(amount+assetamount+bonusamount+couponamount),
+		sum(amount+assetamount+bonusamount+couponamount)/count(DISTINCT accountid)		
+-- SELECT accountid,sum(amount+assetamount+bonusamount+couponamount)
+FROM
+		(SELECT accountid,itemid,amount,assetamount,bonusamount,couponamount
+		FROM da_account_trade
+		WHERE biztype in (1,3) AND inouttype =1 AND `status`=20
+		AND accountid in  (SELECT id FROM da_account WHERE date(registtime)>'2016-01-25' AND commandid is not null )
+		GROUP BY 1 	) aaa
+GROUP BY 1
+ORDER BY 2 DESC
+
+
+
+-- 【第一部分：】
+-- 1、累计交易额
+-- 2、累计交易笔数
+SELECT sum(amount+assetamount+bonusamount+couponamount),count(accountid)
+FROM account_trade
+WHERE biztype in (1,3) AND inouttype=1 AND `status`=20 AND date(createtime)<'2016-06-27';
+
+-- 3、累计注册用户数
+SELECT count(id) FROM account WHERE date(registtime)<'2016-06-27';
+
+-- 4、累计投资人赚取收益
+-- SELECT a.dda,sum(x+y)
+-- FROM 
+-- (SELECT DATE_FORMAT(incomedate,'%Y') as dda,sum(income) as x FROM account_ddb_income WHERE date(incomedate)<'2016-06-27') a
+-- JOIN
+-- (SELECT DATE_FORMAT(incomedate,'%Y') as dda,sum(income) as y FROM account_selfitem_income WHERE date(incomedate)<'2016-06-27' ) b
+-- ON a.dda=b.dda;
+
+SELECT a.dda,sum(x+y)
+FROM 
+(SELECT DATE_FORMAT(incomedate,'%Y') as dda,sum(income) as x FROM account_ddb_income WHERE date(incomedate)<'2016-06-27') a
+JOIN
+(SELECT DATE_FORMAT(createtime,'%Y') as dda,sum(totalincome) as y FROM account_selfitem WHERE date(createtime)<'2016-06-27' ) b
+ON a.dda=b.dda;
+
+-- SELECT DATE_FORMAT(createtime,'%Y') as dda,sum(totalincome) as y FROM account_selfitem WHERE date(createtime)<'2016-06-27' 
+-- SELECT sum(itemincome) FROM account;
+-- 
+-- 5、兑付率
+-- 100%
+
+-- 【第二部分：】
+-- 1、下周兑付项目
+-- 2、兑付金额
+SELECT count(id),sum(unitprice*totalpcs)
+FROM selfitem
+WHERE date(nextretdate) BETWEEN '2016-06-27' AND '2016-07-03'
+
+
+
+-- 【第三部分：】投资用户年龄层分布（百分比）
+select nnd,count(accountid),sum(sum),sum(sum)/count(accountid)
+from
+(select case
+				when DATE_FORMAT(iDdate,'%Y') BETWEEN "2000" AND '2015' then '00后'  
+				when DATE_FORMAT(iDdate,'%Y') BETWEEN "1990" AND '1999'  then '90后'  
+				when DATE_FORMAT(iDdate,'%Y') BETWEEN "1980" AND '1989'  then '80后'  
+				when DATE_FORMAT(iDdate,'%Y') BETWEEN "1970" AND '1979'  then '70后'
+				when DATE_FORMAT(iDdate,'%Y') BETWEEN "1960" AND '1969'  then '60后'
+				when DATE_FORMAT(iDdate,'%Y') <'1960'  then '60前' end as nnd,accountid,sum
+FROM
+				(SELECT id,IDdate FROM ds_account) a
+JOIN
+				(SELECT accountid,sum(amount+assetamount+bonusamount+couponamount) as sum 
+				FROM account_trade
+				WHERE biztype in (1,3) AND inouttype=1 AND `status`=20 AND date(createtime)<'2016-06-27'
+				GROUP BY 1) b
+ON a.id=b.accountid )aaa
+GROUP BY 1
+ORDER BY 3 DESC;
+
+-- 【第四部分：】产品期限（周期）占比分布（百分比）
+SELECT * FROM selfitem LIMIT 10;
+
+SELECT left(itemtitle,3),count(id)
+FROM selfitem
+GROUP BY 1;
+
+
+SELECT rank,count(id)
+FROM
+(-- SELECT totalperiods,count(id),sum(unitprice*totalpcs)
+SELECT CASE 
+		WHEN totalperiods BETWEEN 1 AND 15 then '15天'
+		WHEN totalperiods BETWEEN 16 AND 45 then '30天'
+		WHEN totalperiods BETWEEN 46 AND 75 then '60天'
+		WHEN totalperiods BETWEEN 76 AND 135 then '90天'
+		WHEN totalperiods BETWEEN 136 AND 200 then '180天'
+		WHEN totalperiods BETWEEN 200 AND 400 then '360天' end as rank,id,totalperiods
+FROM selfitem ) aa
+GROUP BY 1
+ORDER BY 2 DESC;
+
+-- 【第五部分】产品（利率）占比分布（百分比）
+SELECT CASE
+		WHEN annualrate < 7.6                THEN  '7.5%以下'
+		WHEN annualrate BETWEEN 7.6 AND 8.5  THEN  '7.5%-8.5%'
+		WHEN annualrate BETWEEN 8.6 AND 10.0 THEN  '8.6%-10.0%'
+		WHEN annualrate > 10.0                THEN  '10%以上' END as rank,count(id),sum(unitprice*totalpcs)
+-- SELECT annualrate,count(id),sum(unitprice*totalpcs)
+FROM selfitem 
+GROUP BY 1
+ORDER BY 3 DESC;
+
+-- 【第六部分】
+SELECT CASE
+		WHEN sum BETWEEN 0 AND 5000 then '0k-5k'
+		WHEN sum BETWEEN 5001 AND 10000 then '5k-1w'
+		WHEN sum BETWEEN 10001 AND 50000 then '1w-5w'
+		WHEN sum BETWEEN 50001 AND 100000 then '5w-10w'
+		WHEN sum BETWEEN 100001 AND 500000 then '10w-50w'
+		WHEN sum > 500000 then '50w+' end as rank,count(accountid),sum(sum)
+FROM
+		(SELECT accountid,sum(amount+assetamount+bonusamount+couponamount) as sum
+		FROM account_trade
+		WHERE biztype in (1,3) AND inouttype=1 AND `status`=20 AND date(createtime)<'2016-06-27'
+		GROUP BY 1 ) aa
+GROUP BY 1
+ORDER BY 3 DESC;
