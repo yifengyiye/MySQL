@@ -1,0 +1,421 @@
+2016-05-06 :4月份新用户现金券消耗情况
+SELECT channel,count(a.accountid),sum(sum)
+FROM 
+			(SELECT accountid
+			FROM da_account_trade
+			WHERE biztype in (1,3) AND inouttype=1 AND `status`=20 AND date(createtime) between '2016-03-01' AND '2016-03-31'
+			AND accountid not in 
+				(SELECT accountid from da_account_trade	WHERE biztype in (1,3) AND inouttype=1 AND `status`=20 AND date(createtime)<'2016-03-01' GROUP BY 1)
+			GROUP BY 1 ) a
+LEFT JOIN
+			(SELECT id,channel from da_account ) b
+ON a.accountid=b.id
+LEFT JOIN
+			(SELECT accountid,sum(usemoney) as sum
+			FROM account_coupons_used
+			WHERE date(createtime) BETWEEN '2016-03-01' AND '2016-03-31' AND date(usetime) BETWEEN '2016-03-01' AND '2016-03-31'
+			GROUP BY 1)c
+ON a.accountid=c.accountid
+GROUP BY 1
+ORDER BY 3 DESC; 
+
+
+
+
+2016-05-09 ：四月份新用户的交易情况：
+SELECT channel,count(accountid),sum(sum)
+FROM 
+(SELECT accountid,sum(amount+assetamount+bonusamount+couponamount) as sum
+FROM da_account_trade
+WHERE biztype in (1,3) AND inouttype=1 AND `status`=20 AND date(createtime) between '2016-03-01' AND '2016-03-31'
+AND accountid not in 
+		(SELECT accountid 
+		from da_account_trade
+		WHERE biztype in (1,3) AND inouttype=1 AND `status`=20 AND date(createtime)<'2016-04-01'
+		GROUP BY 1)
+GROUP BY 1 ) a
+LEFT JOIN
+(SELECT id,channel from da_account ) b
+ON a.accountid=b.id
+GROUP BY 1
+ORDER BY 3 DESC 
+
+SELECT *
+FROM da_account
+where channel = 'null' AND date(registtime)>'2016-04-30'
+-- where channel = 'null' AND date(registtime) BETWEEN '2016-03-01' AND '2016-03-31'
+
+
+【新增用户】
+#11月：注册量
+select count(id) from account where date_format(registtime,'%Y-%m')='2016-06';
+
+-- 12月新增绑卡（1）
+SELECT DATE_FORMAT(createtime,'%Y-%m'),count(DISTINCT(accountid))
+FROM account_independent_authentication
+WHERE DATE_FORMAT(createtime,'%Y-%m')='2016-06'
+AND accountid in (select id from account where date_format(registtime,'%Y-%m')='2016-06' );
+
+-- -- 12月新增绑卡（2）
+-- SELECT DATE_FORMAT(createtime,'%Y-%m'),count(DISTINCT(accountid))
+-- FROM da_account_trade
+-- WHERE biztype=4 AND inouttype=1 AND `status`=20 AND DATE_FORMAT(createtime,'%Y-%m')='2016-05'
+-- AND accountid in (select id from da_account where date_format(registtime,'%Y-%m')='2016-05');
+
+-- X月新增交易
+SELECT DATE_FORMAT(createtime,'%Y-%m'),count(DISTINCT(accountid))
+FROM account_trade
+WHERE DATE_FORMAT(createtime,'%Y-%m')='2016-06' AND biztype in (1,3) AND inouttype=1 AND `status`=20
+AND accountid in (select id from account where date_format(registtime,'%Y-%m')='2016-06'  );
+
+
+
+#12月：总绑卡量
+SELECT a.dda,sum(countjianquan+countjiaoyi)
+FROM
+(SELECT DATE_FORMAT(createtime,'%Y-%m') as dda,count(DISTINCT(accountid)) as countjianquan
+FROM account_independent_authentication
+WHERE DATE_FORMAT(createtime,'%Y-%m')='2016-06'
+GROUP BY 1 ) a #每个月鉴权表里面总的绑卡用户数
+LEFT JOIN
+(SELECT DATE_FORMAT(createtime,'%Y-%m') as dda,count(DISTINCT(accountid)) as countjiaoyi
+FROM account_trade
+WHERE biztype=4 AND inouttype=1 AND `status`=20 AND DATE_FORMAT(createtime,'%Y-%m')='2016-06'
+GROUP BY 1) b    #交易表里面每个月总的绑卡用户数
+ON a.dda=b.dda
+GROUP BY 1
+ORDER BY 1 DESC;
+
+#12月：总交易量
+SELECT DATE_FORMAT(createtime,'%Y-%m'),count(DISTINCT(accountid))
+FROM account_trade
+WHERE biztype in (1,3) AND inouttype=1 AND `status`=20 AND DATE_FORMAT(createtime,'%Y-%m')>'2015-08'
+GROUP BY 1
+ORDER BY 1 DESC;
+
+
+【新用户】
+SELECT count(DISTINCT(accountid)),sum(amount+assetamount+bonusamount+couponamount)
+FROM account_trade
+WHERE biztype in (1,3) AND inouttype=1 AND `status`=20 AND DATE_FORMAT(createtime,'%Y-%m')='2016-06'
+AND accountid not in 
+		(SELECT accountid 
+		FROM account_trade 
+		WHERE biztype in (1,3) AND inouttype=1  AND `status`=20 AND DATE_FORMAT(createtime,'%Y-%m')<'2016-06');
+
+#交易次数
+SELECT count,count(accountid),sum(sum)
+FROM
+		(SELECT accountid,count(accountid) as count,sum(amount+assetamount+bonusamount+couponamount) as sum 
+		FROM account_trade
+		WHERE biztype in (1,3) AND inouttype=1 AND `status`=20 AND DATE_FORMAT(createtime,'%Y-%m')='2016-06'
+		AND accountid not in 
+				(SELECT accountid FROM account_trade WHERE biztype in (1,3) AND inouttype=1 AND `status`=20 AND DATE_FORMAT(createtime,'%Y-%m')<'2016-06')
+		GROUP BY accountid) xxoo
+GROUP BY 1;
+
+【老用户】
+#当月老用户总数
+SELECT count(DISTINCT(accountid)),sum(amount+assetamount+bonusamount+couponamount) 
+FROM account_trade
+WHERE biztype in (1,3) AND inouttype=1 AND `status`=20 AND DATE_FORMAT(createtime,'%Y-%m')='2016-06'
+AND accountid in 
+	(SELECT accountid FROM account_trade 
+	WHERE biztype in (1,3) AND inouttype=1 AND `status`=20 AND DATE_FORMAT(createtime,'%Y-%m')<'2016-06' GROUP BY 1);
+
+
+
+#某月老用户交易次数=1/2/3/3次以上的：
+SELECT count(accountid),sum(sum)
+FROM
+(SELECT accountid,sum(amount+assetamount+bonusamount+couponamount)as sum
+FROM account_trade
+WHERE biztype in (1,3) AND inouttype=1 AND `status`=20 AND DATE_FORMAT(createtime,'%Y-%m')='2016-06'
+AND accountid in 
+		(SELECT accountid 
+		FROM account_trade 
+		WHERE biztype in (1,3) AND inouttype=1 AND `status`=20 AND DATE_FORMAT(createtime,'%Y-%m')<'2015-02' GROUP BY 1)
+GROUP BY 1
+HAVING count(accountid)>3 )a;
+
+
+
+
+#老用户注册渠道分布，及其各渠道交易额
+SELECT b.channel,count(accountid),sum(sum),round(sum(sum)/count(accountid),2)
+from
+		(SELECT accountid,sum(amount+assetamount+bonusamount+couponamount) as sum
+		FROM account_trade
+		WHERE biztype in (1,3) AND inouttype=1 AND `status`=20 
+		AND accountid in (SELECT accountid FROM account_trade WHERE biztype in (1,3) AND inouttype=1 
+				AND `status`=20 AND DATE_FORMAT(createtime,'%Y-%m')<'2016-06' GROUP BY 1)
+		AND DATE_FORMAT(createtime,'%Y-%m')='2016-06'
+		GROUP BY 1)a
+LEFT JOIN 
+		(SELECT id,channel FROM account) b
+ON a.accountid=b.id
+GROUP BY 1
+ORDER BY 2 desc
+LIMIT 38;
+
+
+【交易量】
+#每月交易总额(资金流入)
+SELECT DATE_FORMAT(createtime,'%Y-%m'),sum(amount+couponamount+bonusamount+assetamount)
+FROM account_trade
+WHERE biztype in(1,3) AND inouttype=1 AND `status`=20
+GROUP BY 1;
+#点点宝每月交易额(资金流入)
+SELECT DATE_FORMAT(createtime,'%Y-%m'),sum(amount+couponamount+bonusamount+assetamount)
+FROM account_trade
+WHERE biztype=3 AND inouttype=1 AND `status`=20 AND date(createtime)>'2015-11-30'
+GROUP BY 1;
+#定期理财每日交易额（资金流入）
+SELECT DATE_FORMAT(createtime,'%Y-%m'),sum(amount+couponamount+bonusamount+assetamount)
+FROM account_trade
+WHERE biztype=1 AND inouttype=1 AND `status`=20 AND date(createtime)>'2015-11-30'
+GROUP BY 1;
+#每日提现总额（资金流出）
+SELECT DATE_FORMAT(createtime,'%Y-%m'),sum(amount+couponamount+bonusamount+assetamount)
+FROM account_trade
+WHERE biztype=4 AND inouttype=2 AND `status` in (5,6,20) AND DATE_FORMAT(createtime,'%Y-%m')>'2015-10'
+GROUP BY 1;
+#点点宝每日赎回总额（资金流出）
+SELECT DATE_FORMAT(createtime,'%Y-%m'),sum(amount+couponamount+bonusamount+assetamount)
+FROM account_trade
+WHERE biztype=3 AND inouttype=2 AND `status`=20 AND DATE_FORMAT(createtime,'%Y-%m')>'2015-10'
+GROUP BY 1;
+#定期理财每日回款总额（资金流出）
+SELECT DATE_FORMAT(createtime,'%Y-%m'),sum(amount-profit)
+FROM account_inout 
+WHERE biztype=1 AND inouttype=2 AND DATE_FORMAT(createtime,'%Y-%m')>'2015-10'
+GROUP BY 1;
+
+
+【红包，现金券】12月份
+#红包发放
+SELECT DATE_FORMAT(createtime,'%Y-%m'),sum(bonus)
+FROM account_bonus
+WHERE DATE_FORMAT(createtime,'%Y-%m')>'2015-09' AND inouttype = 1
+GROUP BY 1
+ORDER BY 1 DESC;
+#红包使用
+SELECT DATE_FORMAT(createtime,'%Y-%m'),sum(bonusamount)
+FROM account_trade
+WHERE DATE_FORMAT(createtime,'%Y-%m')='2016-06' AND biztype in (1,3) AND `status`=20 AND inouttype=1 
+GROUP BY 1
+ORDER BY 1 DESC;
+#发放现金券
+SELECT DATE_FORMAT(createtime,'%Y-%m'),sum(money)
+FROM account_coupons
+WHERE DATE_FORMAT(createtime,'%Y-%m')>'2015-09'
+GROUP BY 1
+ORDER BY 1 DESC;
+#现金券的使用
+SELECT DATE_FORMAT(createtime,'%Y-%m'),sum(couponamount) 
+FROM account_trade
+WHERE DATE_FORMAT(createtime,'%Y-%m')='2016-06' AND inouttype = 1 AND `status` = 20 AND biztype in (1,3)
+GROUP BY 1
+ORDER BY 1 DESC;
+
+#现金券的过期
+SELECT DATE_FORMAT(endtime,'%Y-%m'),sum(money) 
+FROM account_coupons 
+WHERE DATE_FORMAT(createtime,'%Y-%m')>'2015-09' and `status`=3
+GROUP BY 1;
+
+【支付成功率】=支付成功笔数/（成功笔数+失败笔数）
+#每月支付成功笔数
+SELECT DATE_FORMAT(createtime,'%Y-%m'),count(*)
+FROM account_trade
+WHERE `status`=20 AND biztype in (1,3) AND inouttype=1 AND DATE_FORMAT(createtime,'%Y-%m')>'2015-07'
+GROUP BY 1
+ORDER BY 1 DESC;
+#每月支付失败笔数
+SELECT DATE_FORMAT(createtime,'%Y-%m'),count(*)
+FROM account_trade
+WHERE `status`=30 AND biztype in (1,3) AND inouttype=1 AND DATE_FORMAT(createtime,'%Y-%m')>'2015-07'
+GROUP BY 1;
+
+#每日支付成功笔数
+SELECT date(createtime),count(*)
+FROM account_trade
+WHERE `status`=20 AND biztype in (1,3) AND inouttype=1 AND date(createtime)>'2016-05-31'
+GROUP BY 1;
+
+#每日支付的失败笔数
+SELECT date(createtime),count(*)
+FROM account_trade
+WHERE `status`=30 AND biztype in (1,3) AND inouttype=1 AND date(createtime)>'2016-05-31'
+GROUP BY 1;
+
+#账户提现金额
+SELECT sum(amount)
+FROM account_cashout
+WHERE DATE_FORMAT(createtime,'%Y-%m')='2015-11' AND `status`=20
+
+#单月注册：
+SELECT count(id)
+FROM account
+WHERE DATE_FORMAT(registtime,'%Y-%m')='2016-07';
+
+#单月绑卡
+SELECT count(DISTINCT accountid)
+FROM account_independent_authentication
+where `status`=20 AND DATE_FORMAT(createtime,'%Y-%m')='2016-07';
+
+#单月交易
+SELECT count(DISTINCT(accountid))
+FROM account_trade
+WHERE biztype in (1,3) AND inouttype=1 AND `status`=20 AND DATE_FORMAT(createtime,'%Y-%m')='2016-07';
+
+#新增绑卡
+SELECT count(DISTINCT accountid)
+FROM account_independent_authentication
+where `status`=20 AND DATE_FORMAT(createtime,'%Y-%m')='2016-07'
+AND accountid in (SELECT id FROM account WHERE DATE_FORMAT(registtime,'%Y-%m')='2016-07');
+
+#新增交易
+SELECT count(DISTINCT(accountid))
+FROM account_trade
+WHERE biztype in (1,3) AND inouttype=1 AND `status`=20 AND DATE_FORMAT(createtime,'%Y-%m')='2016-07'
+AND accountid in (SELECT id FROM account WHERE DATE_FORMAT(registtime,'%Y-%m')='2016-07');
+
+每个月每天交易数量
+SELECT date(createtime),count(DISTINCT(accountid))
+FROM da_account_trade
+WHERE biztype in (1,3) AND inouttype=1 AND `status`=20 AND date(createtime)>'2015-09-30'
+GROUP BY 1
+
+#新用户
+SELECT accountid,count(accountid)
+FROM da_account_trade
+WHERE biztype in (1,3) AND inouttype=1 AND `status`=20 AND DATE_FORMAT(createtime,'%Y-%m')='2015-08'
+GROUP BY 1
+
+12月份各渠道注册用户量
+SELECT channel,count(id)
+FROM da_account
+WHERE DATE_FORMAT(registtime,'%Y-%m')='2015-12'
+GROUP BY 1
+ORDER BY 2 DESC
+#1
+SELECT count,count(DISTINCT(accountid)),sum(sum)
+FROM 
+(SELECT accountid,count(accountid) as count,sum(amount+assetamount+bonusamount+couponamount) as sum
+FROM da_account_trade
+WHERE biztype in (1,3) AND inouttype=1 AND `status`=20 AND DATE_FORMAT(createtime,'%Y-%m')='2015-12'
+AND accountid not in (SELECT accountid FROM da_account_trade WHERE biztype in (1,3) AND inouttype=1 
+AND `status`=20 AND DATE_FORMAT(createtime,'%Y-%m')<'2015-12')
+GROUP BY 1) a
+GROUP BY 1;
+
+#老用户
+SELECT count(accountid),count(DISTINCT(accountid)),sum(amount+assetamount+bonusamount+couponamount)
+FROM da_account_trade
+WHERE biztype in (1,3) AND inouttype=1 AND `status`=20 AND DATE_FORMAT(createtime,'%Y-%m')='2015-12'
+AND accountid in (SELECT accountid FROM da_account_trade WHERE biztype in (1,3) AND inouttype=1 AND `status`=20 AND date(createtime)<'2015-12')
+
+
+
+#支付成功率
+#每日支付成功笔数
+SELECT DATE_FORMAT(createtime,'%Y-%m'),count(*)
+FROM da_account_trade
+WHERE `status`=20 AND biztype in(1,3) AND inouttype=1 
+GROUP BY 1;
+#每日支付的失败笔数
+SELECT DATE_FORMAT(createtime,'%Y-%m'),count(*)
+FROM da_account_trade
+WHERE `status`=30 AND biztype in (1,3) AND inouttype=1 
+GROUP BY 1;
+
+【付费推广渠道】
+#各渠道统计
+SELECT channel,count(id)
+FROM da_account
+WHERE DATE_FORMAT(registtime,'%Y-%m')='2016-01'
+AND channel in ('360','baiducpd','xiaomi','lianxiang','kumi','dandanzuan','xiaoniao',
+'jinritoutiao','jinritoutiao1','jinritoutiao2','jinritoutiao3','jinritoutiao4',
+'ASO','xiaoniao','360yuansheng','oppo','8868')
+GROUP BY 1
+ORDER BY 2 DESC;
+#各渠道交易额
+SELECT b.channel,count(accountid),sum(sum)
+FROM
+(SELECT accountid,count(accountid) as count,sum(amount+assetamount+bonusamount+couponamount) as sum 
+FROM da_account_trade
+WHERE biztype in (1,3) and inouttype=1 AND `status`=20 AND DATE_FORMAT(createtime,'%Y-%m')='2016-01'
+GROUP BY 1) a
+RIGHT JOIN 
+(SELECT id,channel 
+FROM da_account 
+WHERE DATE_FORMAT(registtime,'%Y-%m')='2016-01'
+AND channel in ('360','baiducpd','xiaomi','lianxiang','kumi','dandanzuan','xiaoniao',
+'jinritoutiao','jinritoutiao1','jinritoutiao2','jinritoutiao3','jinritoutiao4',
+'ASO','xiaoniao','360yuansheng','oppo','8868')) b
+ON a.accountid=b.id
+GROUP BY 1;
+
+
+SELECT b.channel,count(a.accountid),sum(a.sum)
+FROM
+(SELECT accountid,sum(amount+assetamount+bonusamount+couponamount) as sum
+FROM da_account_trade
+WHERE biztype in (1,3) and inouttype=1 AND `status`=20 AND date(createtime)<'2016-01-01'
+GROUP BY 1) a
+LEFT JOIN 
+(SELECT id,channel FROM da_account WHERE channel in ('360','baiducpd','xiaomi','lianxiang','kumi','dandanzuan','xiaoniao',
+'jinritoutiao','jinritoutiao1','jinritoutiao2','jinritoutiao3','jinritoutiao4',
+'ASO','xiaoniao','360yuansheng','oppo','8868')) b
+ON a.accountid=b.id
+GROUP BY 1;
+【【【各渠道现金券消耗】】】
+SELECT b.channel,count(accountid),sum(sum1),sum(sum2)
+FROM
+	(SELECT accountid,count(accountid) as count,sum(bonusamount) sum1,sum(couponamount) sum2
+	FROM da_account_trade
+	WHERE biztype in (1,3) and inouttype=1 AND `status`=20 
+			AND DATE_FORMAT(createtime,'%Y-%m')='2016-01' 
+-- AND (couponamount>0 or bonusamount>0)
+	GROUP BY 1) a
+LEFT JOIN 
+	(SELECT id,channel FROM da_account ) b
+ON a.accountid=b.id
+GROUP BY 1
+ORDER BY 3 DESC
+LIMIT 10;
+
+SELECT * FROM da_account WHERE channel is null
+【12月份】
+12月份不在本月注册+在本月交易的用户
+
+
+SELECT count(DISTINCT(accountid)),count(accountid),sum(amount+assetamount+bonusamount+couponamount)
+FROM da_account_trade
+WHERE biztype in (1,3) and inouttype =1 AND `status`=20 AND DATE_FORMAT(createtime,'%Y-%m')='2015-12'
+AND accountid in (SELECT id FROM da_account WHERE DATE_FORMAT(registtime,'%Y-%m')<'2015-12');
+
+
+#各渠道统计
+SELECT channel,count(id)
+FROM da_account
+WHERE DATE_FORMAT(registtime,'%Y-%m')='2015-12'
+AND channel in ('360','baiducpd','lianxiang','jinritoutiao','xiaomi',
+'jinritoutiao1','jinritoutiao2','jinritoutiao3','jinritoutiao4','kumi','dianju','dandanzuan','xiaoniao')
+GROUP BY 1
+ORDER BY 2 DESC;
+
+#当月交易人数，交易额
+SELECT b.channel,count(accountid),sum(sum)
+FROM
+(SELECT accountid,count(accountid) as count,sum(amount+assetamount+bonusamount+couponamount) as sum 
+FROM da_account_trade
+where biztype in (1,3) AND inouttype=1 AND `status`=20 AND DATE_FORMAT(createtime,'%Y-%m')='2015-12'
+GROUP BY 1
+HAVING count>2) a
+LEFT JOIN
+(SELECT id,channel FROM da_account WHERE channel in ('360','baiducpd','lianxiang','jinritoutiao','xiaomi',
+'jinritoutiao1','jinritoutiao2','jinritoutiao3','jinritoutiao4','kumi','dianju','dandanzuan','xiaoniao')) b
+ON a.accountid=b.id
+GROUP BY 1
