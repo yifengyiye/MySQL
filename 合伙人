@@ -1,0 +1,908 @@
+-- 2017-06-22：
+-- 点点合伙人数据需求：（2016年9月份-2017年5月份）
+-- 领取到点点佣金的用户名单、每月获得奖励金额、符合档次（5%或者15%）、邀请用户每月投资金额、邀请用户每月持有资产金额、每月有效下线人数
+
+
+SELECT *
+FROM
+        (-- 领取点点二重礼的用户及每月奖励金额：
+        SELECT accountid
+        FROM
+        (SELECT id,accountid FROM account_coupons WHERE title in ('点金党收益','点点合伙人收益')
+        UNION
+        SELECT id,accountid FROM account_coupons_overdue WHERE title in ('点金党收益','点点合伙人收益')
+        ) aa
+        GROUP BY 1
+        ) xxxx
+LEFT JOIN
+
+(-- 2016-09月份数据：
+SELECT a.accountid as accountid,sums,percent,summ,counts
+FROM
+        (-- 领取点点二重礼的用户及每月奖励金额：
+        SELECT accountid,sum(money) as sums
+        FROM
+        (SELECT id,accountid,money FROM account_coupons WHERE title in ('点金党收益','点点合伙人收益') AND date(createtime) = '2016-10-01'
+        UNION
+        SELECT id,accountid,money FROM account_coupons_overdue WHERE title in ('点金党收益','点点合伙人收益') AND date(createtime) = '2016-10-01'
+        ) aa
+        GROUP BY 1
+        ) a
+LEFT JOIN
+        (-- 符合等级：
+        SELECT accountid,percent FROM account_partner_month WHERE date(createtime) = '2016-10-01' ) b
+ON a.accountid = b.accountid
+LEFT JOIN
+        (-- 邀请好友每月投资金额,有效下线人数：
+        SELECT partnerid,sum(amount) as summ,count(DISTINCT accountid) as counts
+        FROM account_partner_trade
+        WHERE date(tradetime) BETWEEN '2016-09-01' AND '2016-09-30' AND tradeid in (SELECT tradeid FROM account_partner_trade WHERE amount>5000 )
+        GROUP BY 1 ) c
+ON a.accountid = c.partnerid ) aaa
+ON xxxx.accountid = aaa.accountid
+
+LEFT JOIN
+(-- 2016-10月份数据：
+SELECT a.accountid as accountid,sums,percent,summ,counts
+FROM
+        (-- 领取点点二重礼的用户及每月奖励金额：
+        SELECT accountid,sum(money) as sums
+        FROM
+        (SELECT id,accountid,money FROM account_coupons WHERE title in ('点金党收益','点点合伙人收益') AND date(createtime) = '2016-11-01'
+        UNION
+        SELECT id,accountid,money FROM account_coupons_overdue WHERE title in ('点金党收益','点点合伙人收益') AND date(createtime) = '2016-11-01'
+        ) aa
+        GROUP BY 1
+        ) a
+LEFT JOIN
+        (-- 符合等级：
+        SELECT accountid,percent FROM account_partner_month WHERE date(createtime) = '2016-11-01' ) b
+ON a.accountid = b.accountid
+LEFT JOIN
+        (-- 邀请好友每月投资金额,有效下线人数：
+        SELECT partnerid,sum(amount) as summ,count(DISTINCT accountid) as counts
+        FROM account_partner_trade WHERE date(tradetime) BETWEEN '2016-10-01' AND '2016-10-31'
+        AND tradeid in (SELECT tradeid FROM account_partner_trade WHERE amount>5000 )
+        GROUP BY 1 ) c
+ON a.accountid = c.partnerid ) bbb
+ON xxxx.accountid = bbb.accountid
+
+LEFT JOIN
+(-- 2016-11月份数据：
+SELECT a.accountid as accountid,sums,percent,summ,counts
+FROM
+        (-- 领取点点二重礼的用户及每月奖励金额：
+        SELECT accountid,sum(money) as sums
+        FROM
+        (SELECT id,accountid,money FROM account_coupons WHERE title in ('点金党收益','点点合伙人收益') AND date(createtime) = '2016-12-01'
+        UNION
+        SELECT id,accountid,money FROM account_coupons_overdue WHERE title in ('点金党收益','点点合伙人收益') AND date(createtime) = '2016-13-01'
+        ) aa
+        GROUP BY 1
+        ) a
+LEFT JOIN
+        (-- 符合等级：
+        SELECT accountid,percent FROM account_partner_month WHERE date(createtime) = '2016-12-01' ) b
+ON a.accountid = b.accountid
+LEFT JOIN
+        (-- 邀请好友每月投资金额,有效下线人数：
+        SELECT partnerid,sum(amount) as summ,count(DISTINCT accountid) as counts
+        FROM account_partner_trade
+        WHERE date(tradetime) BETWEEN '2016-11-01' AND '2016-11-31' AND id in (SELECT id FROM account_partner_trade WHERE amount>5000 )
+        GROUP BY 1 ) c
+ON a.accountid = c.partnerid ) ccc
+ON xxxx.accountid = ccc.accountid
+LEFT JOIN
+(-- 2016-12月份数据：
+SELECT a.accountid as accountid,sums,percent,summ,counts
+FROM
+        (-- 领取点点二重礼的用户及每月奖励金额：
+        SELECT accountid,sum(money) as sums
+        FROM
+        (SELECT id,accountid,money FROM account_coupons WHERE title in ('点金党收益','点点合伙人收益') AND date(createtime) = '2017-01-01'
+        UNION
+        SELECT id,accountid,money FROM account_coupons_overdue WHERE title in ('点金党收益','点点合伙人收益') AND date(createtime) = '2017-01-01'
+        ) aa
+        GROUP BY 1
+        ) a
+LEFT JOIN
+        (-- 符合等级：
+        SELECT accountid,percent FROM account_partner_month WHERE date(createtime) = '2017-01-01' ) b
+ON a.accountid = b.accountid
+LEFT JOIN
+        (-- 邀请好友每月投资金额,有效下线人数：
+        SELECT partnerid,sum(amount) as summ,count(DISTINCT accountid) as counts
+        FROM account_partner_trade
+        WHERE date(tradetime) BETWEEN '2016-12-01' AND '2016-12-31' AND id in (SELECT id FROM account_partner_trade WHERE amount>5000 )
+        GROUP BY 1 ) c
+ON a.accountid = c.partnerid ) ddd
+ON xxxx.accountid = ddd.accountid
+LEFT JOIN
+(-- 2017-01月份数据：
+SELECT a.accountid as accountid,sums,percent,summ,counts
+FROM
+        (-- 领取点点二重礼的用户及每月奖励金额：
+        SELECT accountid,sum(money) as sums
+        FROM
+        (SELECT id,accountid,money FROM account_coupons WHERE title in ('点金党收益','点点合伙人收益') AND date(createtime) = '2017-02-01'
+        UNION
+        SELECT id,accountid,money FROM account_coupons_overdue WHERE title in ('点金党收益','点点合伙人收益') AND date(createtime) = '2017-02-01'
+        ) aa
+        GROUP BY 1
+        ) a
+LEFT JOIN
+        (-- 符合等级：
+        SELECT accountid,percent FROM account_partner_month WHERE date(createtime) = '2017-02-01' ) b
+ON a.accountid = b.accountid
+LEFT JOIN
+        (-- 邀请好友每月投资金额,有效下线人数：
+        SELECT partnerid,sum(amount) as summ,count(DISTINCT accountid) as counts
+        FROM account_partner_trade
+        WHERE date(tradetime) BETWEEN '2017-01-01' AND '2017-01-31' AND id in (SELECT id FROM account_partner_trade WHERE amount>5000 )
+        GROUP  BY 1 ) c
+ON a.accountid = c.partnerid ) eee
+ON xxxx.accountid = eee.accountid
+LEFT JOIN
+(-- 2017-02月份数据：
+SELECT a.accountid as accountid,sums,percent,summ,counts
+FROM
+        (-- 领取点点二重礼的用户及每月奖励金额：
+        SELECT accountid,sum(money) as sums
+        FROM
+        (SELECT id,accountid,money FROM account_coupons WHERE title in ('点金党收益','点点合伙人收益') AND date(createtime) = '2017-03-01'
+        UNION
+        SELECT id,accountid,money FROM account_coupons_overdue WHERE title in ('点金党收益','点点合伙人收益') AND date(createtime) = '2017-03-01'
+        ) aa
+        GROUP BY 1
+        ) a
+LEFT JOIN
+        (-- 符合等级：
+        SELECT accountid,percent FROM account_partner_month WHERE date(createtime) = '2017-03-01' ) b
+ON a.accountid = b.accountid
+LEFT JOIN
+        (-- 邀请好友每月投资金额,有效下线人数：
+        SELECT partnerid,sum(amount) as summ,count(DISTINCT accountid) as counts
+        FROM account_partner_trade WHERE date(tradetime) BETWEEN '2017-02-01' AND '2017-02-31'
+        AND tradeid in (SELECT tradeid FROM account_partner_trade WHERE amount>5000 )
+        GROUP BY 1 ) c
+ON a.accountid = c.partnerid ) fff
+ON xxxx.accountid = fff.accountid
+LEFT JOIN
+(-- 2017-03月份数据：
+SELECT a.accountid as accountid,sums,percent,summ,counts
+FROM
+        (-- 领取点点二重礼的用户及每月奖励金额：
+        SELECT accountid,sum(money) as sums
+        FROM
+        (SELECT id,accountid,money FROM account_coupons WHERE title in ('点金党收益','点点合伙人收益') AND date(createtime) = '2017-04-01'
+        UNION
+        SELECT id,accountid,money FROM account_coupons_overdue WHERE title in ('点金党收益','点点合伙人收益') AND date(createtime) = '2017-04-01'
+        ) aa
+        GROUP BY 1
+        ) a
+LEFT JOIN
+        (-- 符合等级：
+        SELECT accountid,percent FROM account_partner_month WHERE date(createtime) = '2017-04-01' ) b
+ON a.accountid = b.accountid
+LEFT JOIN
+        (-- 邀请好友每月投资金额,有效下线人数：
+        SELECT partnerid,sum(amount) as summ,count(DISTINCT accountid) as counts
+        FROM account_partner_trade
+        WHERE date(tradetime) BETWEEN '2017-03-01' AND '2017-03-31' AND id in (SELECT id FROM account_partner_trade WHERE amount>5000 )
+        GROUP BY 1 ) c
+ON a.accountid = c.partnerid ) ggg
+ON xxxx.accountid = ggg.accountid
+LEFT  JOIN
+(-- 2017-04月份数据：
+SELECT a.accountid as accountid,sums,percent,summ,counts
+FROM
+        (-- 领取点点二重礼的用户及每月奖励金额：
+        SELECT accountid,sum(money) as sums
+        FROM
+        (SELECT id,accountid,money FROM account_coupons WHERE title in ('点金党收益','点点合伙人收益') AND date(createtime) = '2017-05-01'
+        UNION
+        SELECT id,accountid,money FROM account_coupons_overdue WHERE title in ('点金党收益','点点合伙人收益') AND date(createtime) = '2017-05-01'
+        ) aa
+        GROUP BY 1
+        ) a
+LEFT JOIN
+        (-- 符合等级：
+        SELECT accountid,percent FROM account_partner_month WHERE date(createtime) = '2017-05-01' ) b
+ON a.accountid = b.accountid
+LEFT JOIN
+        (-- 邀请好友每月投资金额,有效下线人数：
+        SELECT partnerid,sum(amount) as summ,count(DISTINCT accountid) as counts
+        FROM account_partner_trade
+        WHERE date(tradetime) BETWEEN '2017-04-01' AND '2017-04-31' AND id in (SELECT id FROM account_partner_trade WHERE amount>5000 )
+        GROUP BY 1 ) c
+ON a.accountid = c.partnerid ) hhh
+ON xxxx.accountid = hhh.accountid
+LEFT JOIN
+(-- 2017-05月份数据：
+SELECT a.accountid as accountid,sums,percent,summ,counts
+FROM
+        (-- 领取点点二重礼的用户及每月奖励金额：
+        SELECT accountid,sum(money) as sums
+        FROM
+        (SELECT id,accountid,money FROM account_coupons WHERE title in ('点金党收益','点点合伙人收益') AND date(createtime) = '2017-06-01'
+        UNION
+        SELECT id,accountid,money FROM account_coupons_overdue WHERE title in ('点金党收益','点点合伙人收益') AND date(createtime) = '2017-06-01'
+        ) aa
+        GROUP BY 1
+        ) a
+LEFT JOIN
+        (-- 符合等级：
+        SELECT accountid,percent FROM account_partner_month WHERE date(createtime) = '2017-06-01' ) b
+ON a.accountid = b.accountid
+LEFT JOIN
+        (-- 邀请好友每月投资金额,有效下线人数：
+        SELECT partnerid,sum(amount) as summ,count(DISTINCT accountid) as counts
+        FROM account_partner_trade
+        WHERE date(tradetime) BETWEEN '2017-05-01' AND '2017-05-31' AND id in (SELECT id FROM account_partner_trade WHERE amount>5000 )
+        GROUP BY 1 ) c
+ON a.accountid = c.partnerid ) iii
+ON xxxx.accountid = iii.accountid ;
+
+-- title查询：
+SELECT left(title,15)
+from
+(
+select id,accountid,money,createtime,title
+from account_coupons
+union
+select id,accountid,money,createtime,title
+from account_coupons_overdue
+) a
+GROUP BY  1 ;
+
+
+
+-- 2017-06-15:查看这批用户的持有资产
+SELECT id,realname,mobile,sum
+FROM
+  (SELECT id,realname,itemasset+ddbassetwithincome+ddbassetnoincome as sum FROM account ) a
+right JOIN
+  (SELECT accountid,mobile FROM account_mobile WHERE mobile in (15204026599,13219174356,15529617241	)) b
+ON a.id = b.accountid ;
+
+
+
+-- 回款查询
+SELECT *
+FROM
+  (
+    SELECT tradeid,title,amount,createtime
+    FROM account_inout
+    WHERE biztype = 1 AND inouttype = 2 AND DATE(createtime) BETWEEN "2016-06-01" AND "2017-05-31"
+  ) a
+LEFT JOIN
+  (SELECT id,totalperiods FROM selfitem ) c
+ON a.tradeid = c.id ;
+
+
+SELECT * FROM account_trade WHERE id=100000000000004475
+
+SELECT tradeid,title,amount,createtime
+FROM account_inout
+WHERE biztype = 1 AND inouttype = 2 AND DATE(createtime) BETWEEN "2016-06-01" AND "2017-05-31";
+
+
+SELECT tradeid,title,amount,createtime
+FROM account_inout
+WHERE title LIKE '%回款%' AND DATE(createtime) BETWEEN "2016-06-01" AND "2017-05-31"
+
+
+
+-- 2017-06-14:
+-- 凯强 给我导一份  有发生过三次交易以上但近一个月未打开APP的用户的手机号码
+SELECT a.accountid,mobile
+FROM
+  (SELECT accountid
+   FROM account_trade
+   WHERE biztype IN (1, 3) AND inouttype = 1 AND status = 20
+         AND accountid NOT IN (SELECT accountid
+                               FROM system_appopenlog
+                               WHERE date(opentime) BETWEEN "2017-05-14" AND "2017-06-14"
+                               GROUP BY 1)
+   GROUP BY 1
+   HAVING count(accountid) > 2
+  ) a
+LEFT JOIN
+  (SELECT accountid,mobile FROM account_mobile ) b
+ON a.accountid = b.accountid ;
+
+
+-- 还有一份有账户余额的用户的手机号码
+SELECT id,mobile
+FROM
+  (SELECT id,asset FROM account WHERE asset > 0) a
+LEFT JOIN
+  (SELECT accountid,mobile FROM account_mobile ) b
+ON a.id = b.accountid ;
+
+
+-- 2017-06-14：加息券
+SELECT money,count(*),title
+FROM account_coupons
+WHERE type=2
+GROUP BY 1
+ORDER BY 1 ;
+
+GRANT SELECT ON account_cashout to zhoubijun;
+
+
+
+-- 2017-06-13：每月交易额，每月提现金额，每月存量变化金额（准确数据）
+SELECT date_format(updatetime,"%Y-%m"),max(date(updatetime)),itemasset+ddbasset
+FROM ds_daily_all
+WHERE date(updatetime) BETWEEN '2016-06-01' AND '2017-05-31'
+GROUP BY 1 ,2;
+
+SELECT date1,max(date2),sum
+FROM
+(
+SELECT date_format(updatetime,"%Y-%m") date1,date(updatetime) date2 ,itemasset+ddbasset as sum
+FROM ds_daily_all
+WHERE date(updatetime) BETWEEN '2016-06-01' AND '2017-05-31'
+GROUP BY 1 ,2
+) a
+group by 1 ;
+
+SELECT date1,max(date2),sum
+FROM
+(
+SELECT date_format(updatetime,"%Y-%m") date1,date(updatetime) date2 ,itemasset+ddbasset as sum
+FROM ds_daily_all
+WHERE date(updatetime) = '2016-05-31'
+GROUP BY 1 ,2
+) a
+group by 1 ;
+
+
+
+SELECT date_format(updatetime,"%Y-%m"),max(date(updatetime)),itemasset+ddbasset
+FROM ds_daily_all
+WHERE date(updatetime) = '2016-11-30' ;
+
+
+
+show grants for yaokaiqiang;
+CREATE USER 'zhoubijun'@'192.168.3.197' IDENDIFIED BY '123456';
+
+
+-- 2017-06-12 ： 凯强  帮我导一份 在pc端交易过的 用户名单 和微信端交易过的用户名单
+SELECT a.accountid,mobile
+FROM
+  (SELECT accountid,channel
+   FROM account_trade
+   WHERE biztype IN (1, 3) AND inouttype = 1 AND status = 20 AND channel IN ('weixin', 'micromessage', 'micromessenger')
+  GROUP BY 1
+  ) a
+LEFT JOIN
+  (SELECT accountid,mobile from account_mobile )b
+ON a.accountid = b.accountid ;
+
+SELECT channel
+FROM account_trade
+WHERE  channel LIKE '%weixin%'
+group by 1 ;
+
+SELECT a.accountid,mobile
+FROM
+  (
+  SELECT accountid,channel
+  FROM account_trade
+  WHERE biztype in (1,3) AND inouttype=1 AND status=20 AND channel in ('web','pc')
+  group BY 1
+  ) a
+LEFT JOIN
+  (SELECT accountid,mobile from account_mobile )b
+ON a.accountid = b.accountid ;
+
+
+
+
+
+-- 2017-06-07 ：518活动  领券人数   券的成本和交易金额。
+SELECT left(title,10)
+FROM account_coupons
+GROUP BY 1 ;
+
+SELECT money,count(DISTINCT accountid),count(accountid)
+-- SELECT count(DISTINCT accountid),count(accountid),count(accountid)
+FROM
+  (SELECT id,accountid,createtime,money,usemoney,tradeid,type FROM account_coupons WHERE title LIKE '%2017518理财节%'
+UNION
+SELECT id,accountid,createtime,money,usemoney,tradeid,type FROM account_coupons_overdue WHERE title LIKE '%2017518理财节%'
+  ) a
+group by 1 ;
+
+
+
+-- 现金券的使用情况
+SELECT  money,count(DISTINCT a.accountid),count(a.accountid),sum(couponamount),sum(sum)
+-- SELECT  date(createtime),count(DISTINCT a.accountid),count(a.accountid),sum(sum)
+FROM
+  (SELECT
+     id,
+     accountid,
+     createtime,couponamount,
+     amount + assetamount + bonusamount + couponamount AS sum
+   FROM account_trade
+   WHERE biztype IN (1, 3) AND inouttype = 1 AND status = 20
+   GROUP BY 1) a
+  JOIN
+  (SELECT
+     id,
+     accountid,
+     tradeid,money
+   FROM account_coupons
+   WHERE status = 2 AND type = 1 AND title LIKE '%2017518理财节%') b
+    ON a.id = b.tradeid
+GROUP BY 1;
+
+-- 加息券的使用：
+SELECT money,count(DISTINCT a.accountid),count(a.accountid),sum(totalincome),sum(sum)
+FROM
+  (SELECT
+     id,
+     accountid,
+     tradeid,
+     createtime,totalincome,
+     amount AS sum
+   FROM account_selfitem_coupons
+   GROUP BY 1) a
+  JOIN
+  (SELECT
+     id,
+     accountid,
+     tradeid,money
+   FROM account_coupons
+   WHERE status = 2 AND type = 2 AND title LIKE '%2017518理财节%') b
+    ON a.tradeid = b.tradeid
+GROUP BY 1;
+
+
+
+
+
+
+-- 2017-05-31 ： 凯强  帮我导一下   购买过提薪计划的用户的名单。
+SELECT *
+FROM
+(
+SELECT accountid
+FROM account_trade
+WHERE biztype in (1,3) AND inouttype=1 AND status=20
+AND itemid in (SELECT id FROM selfitem WHERE itemtitle LIKE '%提薪计划%' )
+group BY 1
+)a
+LEFT JOIN
+(SELECT accountid,mobile from account_mobile ) b
+  ON a.accountid = b.accountid   ;
+
+-- 2017-05-31
+SELECT *
+FROM
+  (SELECT id,registtime,asset FROM account WHERE realname IS NULL AND asset > 0 )a
+left join
+(select accountid,mobile from account_mobile ) b
+on a.id = b.accountid ;
+
+
+-- 2017-05-26 ：中位数
+SELECT num,count(accountid)
+FROM
+  (
+  SELECT DATE_FORMAT(createtime,'%Y-%m')as months,accountid,COUNT(*) as num
+		-- SELECT *
+	FROM account_trade
+	WHERE biztype =4  AND inouttype = 2 AND `status` in (6,20) AND DATE(createtime) between '2016-11-01' AND '2017-04-30'
+	AND accountid in
+	(SELECT  accountid FROM account_trade
+	WHERE `status` = 20 AND biztype in (1,3) AND inouttype = 1
+	GROUP BY 1
+	HAVING count(accountid) >= 3
+	)
+	GROUP BY 1,2
+  order BY 3
+) a
+group by 1
+order by 2;
+
+
+
+-- 2017-05-26：凯强 帮我看一下 我们三次交易用户及以上 近六个月 每个月的提现次数
+
+-- 2017-05-23：凯强  帮我看看 去年4月份左右 有发过一批理财金  帮我看下 这批用户的名单（未绑卡交易的）
+SELECT a.accountid,mobile,sum
+FROM
+  (
+SELECT accountid
+FROM
+  (
+    SELECT
+      id,
+      accountid,
+      money,
+      createtime,
+      title
+    FROM account_coupons
+    WHERE activityid = 100035
+    UNION
+    SELECT
+      id,
+      accountid,
+      money,
+      createtime,
+      title
+    FROM account_coupons_overdue
+    WHERE activityid = 100035
+  ) a
+WHERE accountid not in (select accountid from account_trade where biztype in (1,3,4) and inouttype=1 and status=20 group by 1 )
+and accountid not in (select accountid from account_independent_authentication where status=20 group by 1 )
+GROUP BY  1
+  )a
+LEFT JOIN
+  (SELECT accountid,mobile FROM account_mobile )b
+  ON a.accountid = b.accountid
+LEFT JOIN
+  (SELECT id,sum(asset) as sum FROM account GROUP BY 1) c
+ON a.accountid = c.id ;
+
+-- 2017-05-18：
+SELECT a.id,mobile,count,sum
+FROM
+  (SELECT id,channel from account WHERE channel = '518') a
+LEFT JOIN
+  (SELECT accountid,mobile FROM account_mobile ) b
+ON a.id = b.accountid
+LEFT JOIN
+  (SELECT accountid,count(*) as count,sum(amount+assetamount+bonusamount+couponamount) as sum
+  FROM account_trade
+  WHERE biztype in (1,3) AND inouttype=1 AND status=20
+  GROUP BY 1) c
+ON a.id =c.accountid
+
+SELECT left(title,10)
+FROM account_coupons
+WHERE date(createtime)>='2017-05-16'
+GROUP BY 1;
+
+
+SELECT money
+FROM account_coupons
+WHERE title LIKE '%2017518理财节%' -- date(createtime)>='2017-05-16'
+GROUP BY 1;
+
+
+
+-- 2017-05-16：凯强 给我导一份  持有资产超过10000元的用户名单 &  近一个月未交易的用户名单  并且去重。
+select id,sum,mobile
+from
+(select id,itemasset+ddbassetwithincome+ddbassetnoincome as sum
+FROM source.account
+HAVING sum >= 10000
+--  AND id not in
+--      (SELECT accountid FROM source.account_trade
+--      WHERE biztype in (1,3) AND inouttype=1 AND status=20 AND date(createtime) BETWEEN '2017-04-16' AND '2017-05-16'
+--      GROUP BY 1 )
+) a
+left join
+(select accountid,mobile
+from account_mobile
+) b
+on a.id = b.accountid
+order by 2 desc ;
+
+
+SELECT count(DISTINCT accountid)
+FROM source.account_trade
+WHERE biztype in (1,3) AND inouttype=1 AND status=20 -- AND date(createtime) BETWEEN '2017-04-16' AND '2017-05-16'
+
+
+-- 2017-05-11：
+-- 回款用户查询：
+select a.accountid,count,sum,mobile
+--  select sum(sum)
+from
+        (
+        select accountid,count(accountid) count,sum(summ) as sum
+        -- select *
+        from
+        (select accountid,itemid,createtime,amount+assetamount+bonusamount+couponamount as summ
+        from source.account_trade
+        where biztype in (1,3) and inouttype=1 and status=20
+        group by id ) a
+        join
+        (select id,nextretdate from source.selfitem where DATE(nextretdate) = '2017-05-14' ) b
+        on a.itemid = b.id
+        group by 1
+        ) a
+left join
+        (select accountid,mobile from source.account_mobile ) b
+on a.accountid = b.accountid ;
+
+
+-- test
+        select accountid,count(accountid) count,sum(summ) as sum
+        from
+        (select accountid,itemid,createtime,amount+assetamount+bonusamount+couponamount as summ
+        from source.account_trade
+        where biztype in (1) and inouttype=1 and status=20
+        group by id ) a
+        join
+        (select id,nextretdate from source.selfitem where DATE(nextretdate) = '2017-05-13' ) b
+        on a.itemid = b.id ;
+
+
+select sum(amount+assetamount+bonusamount+couponamount) as summ
+from source.account_trade
+where biztype in (1) and inouttype=1 and status=20 AND itemid in (select id from selfitem where DATE(nextretdate) = '2017-05-14')
+
+
+select sum(unitprice*totalpcs) from selfitem where DATE(nextretdate) = '2017-05-13';
+
+
+SELECT date(createtime),sum(amount)
+FROM source.account_inout
+WHERE biztype=1 AND inouttype=2 and datediff(createtime,NOW()) = -1
+GROUP BY 1;
+
+
+SELECT date(createtime),sum(amount)
+FROM account_inout
+WHERE biztype=1 AND inouttype=2 -- and datediff(createtime,NOW()) = 0
+GROUP BY 1;
+
+
+select accountid,amount,title
+FROM source.account_inout
+WHERE  date(createtime)='2017-05-14' AND inouttype=2 AND biztype=1
+order by 2 DESC  ;
+
+
+-- 2017-05-09：点币大于10万的用户
+SELECT mobile
+FROM
+  (
+    SELECT accountid,cur_usable_score
+    FROM source.account_score
+    WHERE cur_usable_score >= 30000
+  ) a
+LEFT JOIN
+  (SELECT accountid,mobile FROM source.account_mobile ) b
+ON a.accountid =b.accountid ;
+
+
+-- 2017-05-05账户余额总额
+SELECT sum(asset)
+FROM source.account ;
+
+
+-- 2017-04-28 ：
+-- 劳动节三天回款用户查询：
+select *
+from
+(
+select date(nextretdate),accountid,count(accountid),sum(summ)
+-- select *
+from
+(select accountid,itemid,createtime,amount+assetamount+bonusamount+couponamount as summ
+from account_trade
+where biztype in (1,3) and inouttype=1 and status=20
+group by id ) a
+join
+(select id,nextretdate from selfitem where nextretdate between '2017-05-11' and '2017-05-11' ) b
+on a.itemid = b.id
+group by 1 ,2
+) a
+left join
+(select accountid,mobile from account_mobile ) b
+on a.accountid = b.accountid ;
+
+
+
+-- 2017-04-27 :
+-- 合伙人一重礼：
+select sum(totalincome)
+-- select *
+from account_partner_monthdetail
+where date(createtime) between '2017-04-01' and '2017-04-31' and percent = 0.05 ;
+
+-- 合伙人二重礼：
+select left(title,10),sum(usemoney)
+from account_coupons
+where date(usetime) between '2017-04-01' and '2017-04-31' and status=2 and type=1
+group by 1
+order by 2 desc ;
+
+
+select id,accountid,money,createtime from account_coupons where date(createtime) between '2017-04-01' and '2017-04-31' and title like "%点金党收益%"
+union
+select id,accountid,money,createtime from account_coupons_overdue where date(createtime) between '2017-04-01' and '2017-04-31' and title like "%点金党收益%" ;
+
+
+-- 2017-04-25 ：
+select ddbassetnoincome+ddbassetwithincome+itemasset as 资产,itemasset,ddbincome+itemincome as 收益,
+		ddbassetnoincome+ddbassetwithincome+itemasset-ddbincome-itemincome as 本金
+from account
+where id = 100000000000350134 ;
+
+
+select *
+-- select sum(restamount)
+from account_selfitem
+where accountid = 100000000000350134 and status=5
+order by createtime desc ;
+
+-- 表授权：
+grant select on account_selfitem to wangjinyu ;
+
+
+-- 2017-04-24：
+-- 1.最近半年交易定期产品的银行卡支付金额：
+select case
+		when totalperiods between 1 and 20 then '15天'
+		when totalperiods between 21 and 45 then '30天'
+		when totalperiods between 46 and 75 then '60天'
+		when totalperiods between 76 and 120 then '90天'
+		when totalperiods between 121 and 200 then '180天'
+		when totalperiods > 200 then '360天' end as periods ,count(accountid),count(distinct accountid),sum(sum),sum(summ),sum(sum)/sum(summ)
+-- select totalperiods,count(*),count(distinct accountid),sum(sum),sum(summ),sum(sum)/sum(summ)
+-- select annualrate,sum(sum),sum(summ),sum(sum)/sum(summ)
+from
+    (select accountid,itemid,createtime,amount as sum,amount+assetamount+bonusamount+couponamount as summ
+    from account_trade
+    where biztype in (1,3) and inouttype=1 and status=20 and date(createtime) between '2016-10-24' and '2017-04-23' ) a
+join
+    (select id,totalperiods,annualrate from selfitem ) b
+on a.itemid = b.id
+group by 1 ;
+
+
+
+-- 2.最近半年提现金额统计：
+select count(distinct accountid),count(accountid),sum(amount+assetamount+couponamount+bonusamount)
+from account_trade
+where biztype =4 and inouttype=2 and status in (6,20) and date(createtime) between '2016-10-24' and '2017-04-23'
+group by 1 ;
+
+-- 3.支付手续费
+select date(createtime),sum(fee)
+from account_trade
+where biztype in (1,3) and inouttype=1 and status=20 and date(createtime) between '2016-10-24' and '2017-04-23'
+group by 1 ;
+
+
+-- 2017-04-21：
+-- 2017年4月份，每天提现5w以上的用户，每天赎回2w以上的用户名单
+
+select date,a.accountid,sum,mobile,c.realname,d.realname
+from
+    (-- 提现：
+    select date(createtime) date,accountid,sum(amount+assetamount+bonusamount+couponamount) as sum
+    from account_trade
+    where biztype=4 and inouttype =2 and status in (6,20) and date(createtime) between '2017-04-01' and '2017-04-31'
+    group by 1 , 2
+    having sum >= 50000
+    ) a
+left join
+    (select accountid,mobile from account_mobile ) b
+on a.accountid = b.accountid
+left join
+    (select id,realname,commandid from account) c
+on a.accountid = c.id
+left join
+    (select id,realname from account ) d
+on c.commandid = d.id ;
+
+
+
+select date,a.accountid,sum,mobile,realname
+from
+    (-- 赎回：
+    select date(createtime) as date,accountid,sum(amount) as sum
+    from account_inout
+    where biztype in (1,3) and inouttype=2 and date(createtime) between '2017-04-01' and '2017-04-31'
+    group by 1 , 2
+    having sum >= 20000 ) a
+left join
+    (select accountid,mobile from account_mobile ) b
+on a.accountid = b.accountid
+left join
+    (select id,realname from account) c
+on a.accountid = c.id;
+
+
+
+-- 2017-04-21 ：凯强 帮我拉一份 账户余额有钱的 大于10元的名单~要手机号码~
+-- 麻烦给我导一份  账户余额1000元以上的用户的手机号码和账户余额金额。
+select id,asset,mobile
+from
+    (select id,asset from account where asset >= 100 ) a
+left join
+    (select accountid,mobile from account_mobile ) b
+on a.id = b.accountid
+order by 2 desc ;
+
+-- 1-注册用户
+SELECT a.id,channel,registtime,lastlogintime,mobile
+FROM
+    (SELECT id,channel,registtime FROM account WHERE DATE(registtime) = '2017-04-18')a
+LEFT JOIN
+    (SELECT accountid,max(opentime) as lastlogintime FROM system_appopenlog GROUP BY 1)b
+ON a.id = b.accountid
+left join
+    (select accountid,mobile from account_mobile ) mm
+on a.id = mm.accountid ;
+
+
+-- 2-绑卡失败用户
+SELECT a.accountid,realname,gender,registtime,createtime,json
+FROM
+    (SELECT accountid,createtime,json,realname
+    FROM account_independent_authentication
+    WHERE DATE(createtime) = '2017-04-18' AND `status` =30 AND json NOT like '%Incorrected card%' )a
+JOIN
+    (SELECT id,gender,registtime FROM ds_account )b
+ON a.accountid =b.id ;
+
+-- 3-首次绑卡成功且绑卡后三天未进行交易
+SELECT accountid,realname,if(gender = 1,'男','女')as gender,registtime,createtime
+FROM
+    (SELECT accountid,createtime,realname
+    FROM account_independent_authentication
+    WHERE `status` =20
+    GROUP BY 1)a
+JOIN
+    (SELECT id,gender,registtime FROM ds_account)b
+ON a.accountid = b.id
+WHERE DATE(createtime) = '2017-04-16' AND accountid not in
+        (SELECT accountid
+        FROM account_trade
+        WHERE biztype in (1,3) AND inouttype = 1 AND `status` =20  AND DATE(createtime) in ('2017-04-16','2017-04-17','2017-04-18')
+        GROUP BY 1)
+ORDER BY createtime;
+
+
+
+-- 4-交易失败
+SELECT 4-accountid,realname,if(gender = 1,'男','女')as gender,registtime,sum,createtime,json
+FROM
+(
+SELECT accountid,id,createtime,SUM(amount+bonusamount+couponamount+assetamount) as sum,json
+FROM account_trade
+WHERE `status` in (5,30) AND DATE(createtime) = '2017-04-18' AND json NOT like '%余额不足%' AND json NOT LIKE '%wrongpwd%'
+GROUP BY id
+)a
+JOIN
+(SELECT id,realname,gender,registtime
+FROM ds_account)b
+ON a.accountid = b.id ;
+
+-- 5-交易成功且首笔金额大于1000元用户
+SELECT accountid,realname,if(gender = 1,'男','女')as gender,registtime,sum,itemid,totalperiods,createtime
+FROM
+(
+SELECT accountid,createtime,itemid,SUM(amount+bonusamount+couponamount+assetamount) as sum
+FROM account_trade
+WHERE biztype in (1,3) AND inouttype = 1 AND `status` =20  AND DATE(createtime) = '2017-04-18'
+GROUP BY 1
+)a
+JOIN
+(SELECT id,realname,gender,registtime
+FROM ds_account)b
+on a.accountid = b.id
+JOIN
+JOIN
+(SELECT id,totalperiods
+FROM selfitem)c
+ON a.itemid = c.id
+WHERE sum > 1000
+ORDER BY createtime ;
+
+
+SELECT id,accountid,money,usemoney,type,title
+FROM account_coupons
+WHERE title LIKE  "%父亲节%";
